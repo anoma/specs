@@ -794,6 +794,20 @@ pub struct Transfer {
 </ul>
 </li>
 </ul>
+<h2 id="required-changes-to-zip-32-shielded-hierarchical-deterministic-wallets"><a class="header" href="#required-changes-to-zip-32-shielded-hierarchical-deterministic-wallets">Required Changes to ZIP 32: Shielded Hierarchical Deterministic Wallets</a></h2>
+<p>Below, the changes from <a href="https://zips.z.cash/zip-0032">ZIP 32: Shielded Hierarchical Deterministic Wallets</a> assumed to have been integrated into the Multi-Asset Shielded Pool Specification are listed:</p>
+<ul>
+<li><a href="https://zips.z.cash/zip-0032#specification-key-encodings">Specification: Key Encodings</a>
+<ul>
+<li><a href="https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki">BIP-0350</a> is used instead of <a href="https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki">BIP-173</a> to further encode the raw encodings</li>
+</ul>
+</li>
+<li><a href="https://zips.z.cash/zip-0032#sapling-extended-spending-keys">Sapling extended spending keys</a>
+<ul>
+<li>For extended spending keys on the Testnet, the Human-Readable Part is &quot;esktest&quot;</li>
+</ul>
+</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
 <h1 id="shielded-pool-incentives"><a class="header" href="#shielded-pool-incentives">Shielded pool incentives</a></h1>
 <p>Private transactions made by individual users using the MASP increase the privacy set for other users, so even if the individual doesn't care whether a particular transaction is private, others benefit from their choice to do the transaction in private instead of in public. In the absence of a subsidy (the computation required for private state transitions is likely more expensive) orother incentives, users may not elect to make their transactions private when they do not need to because the benefits do not directly accrue to them. This provides grounds for a protocol subsidy of shielded transactions (relative to the computatation required), so that users who do not have a strong preference on whether or not to make their transaction private will be &quot;nudged&quot; by the fee difference to do so.</p>

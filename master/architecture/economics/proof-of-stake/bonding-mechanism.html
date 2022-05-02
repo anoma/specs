@@ -169,20 +169,18 @@
 <ul>
 <li><em>inactive</em>:
 A validator is not being considered for block creation and cannot receive any new delegations.</li>
-<li><em>pending</em>:
-A validator has requested to become a <em>candidate</em>.</li>
 <li><em>candidate</em>:
 A validator is considered for block creation and can receive delegations.</li>
 </ul>
-<p>For each validator (in any state), the system also tracks total bonded tokens as a sum of the tokens in their self-bonds and delegated bonds, less any unbonded tokens. The total bonded tokens determine their voting voting power by multiplication by the <code>votes_per_token</code> <a href="#system-parameters">parameter</a>. The voting power is used for validator selection for block creation and is used in governance related activities.</p>
+<p>For each validator (in any state), the system also tracks total bonded tokens as a sum of the tokens in their self-bonds and delegated bonds. The total bonded tokens determine their voting voting power by multiplication by the <code>votes_per_token</code> <a href="#system-parameters">parameter</a>. The voting power is used for validator selection for block creation and is used in governance related activities.</p>
 <h4 id="validator-actions"><a class="header" href="#validator-actions">Validator actions</a></h4>
 <ul>
 <li><em>become validator</em>:
-Any account that is not a validator already and that doesn't have any delegations may request to become a validator. It is required to provide a public consensus key and staking reward address. For the action applied in epoch <code>n</code>, the validator's state will be immediately set to <em>pending</em>, it will be set to <em>candidate</em> for epoch <code>n + pipeline_length</code> and the consensus key is set for epoch <code>n + pipeline_length</code>.</li>
+Any account that is not a validator already and that doesn't have any delegations may request to become a validator. It is required to provide a public consensus key and staking reward address. For the action applied in epoch <code>n</code>, the validator's state will be set to <em>candidate</em> for epoch <code>n + pipeline_length</code> and the consensus key is set for epoch <code>n + pipeline_length</code>.</li>
 <li><em>deactivate</em>:
-Only a <em>pending</em> or <em>candidate</em> validator account may <em>deactivate</em>. For this action applied in epoch <code>n</code>, the validator's account is set to become <em>inactive</em> in the epoch <code>n + pipeline_length</code>.</li>
+Only a validator whose state at or before the <code>pipeline_length</code> offset is <em>candidate</em> account may <em>deactivate</em>. For this action applied in epoch <code>n</code>, the validator's account is set to become <em>inactive</em> in the epoch <code>n + pipeline_length</code>.</li>
 <li><em>reactivate</em>:
-Only an <em>inactive</em> validator may <em>reactivate</em>. Similarly to <em>become validator</em> action, for this action applied in epoch <code>n</code>, the validator's state will be immediately set to <em>pending</em> and it will be set to <em>candidate</em> for epoch <code>n + pipeline_length</code>.</li>
+Only an <em>inactive</em> validator may <em>reactivate</em>. Similarly to <em>become validator</em> action, for this action applied in epoch <code>n</code>, the validator's state will be set to <em>candidate</em> for epoch <code>n + pipeline_length</code>.</li>
 <li><em>self-bond</em>:
 A validator may lock-up tokens into a <a href="#bonds">bond</a> only for its own validator's address.</li>
 <li><em>unbond</em>:
@@ -193,7 +191,7 @@ Unbonded tokens may be withdrawn in or after the <a href="#unbond">unbond's epoc
 Set the new consensus key. When applied in epoch <code>n</code>, the key is set for epoch <code>n + pipeline_length</code>.</li>
 </ul>
 <h4 id="active-validator-set"><a class="header" href="#active-validator-set">Active validator set</a></h4>
-<p>From all the <em>candidate</em> validators, in each epoch the ones with the most voting power limited up to the <code>max_active_validators</code> <a href="#system-parameters">parameter</a> are selected for the active validator set. The active validator set selected in epoch <code>n</code> is set for epoch <code>n + pipeline_length</code>.</p>
+<p>From all the <em>candidate</em> validators, in each epoch the ones with the most voting power limited up to the <code>max_validator_slots</code> <a href="#system-parameters">parameter</a> are selected for the active validator set. The active validator set selected in epoch <code>n</code> is set for epoch <code>n + pipeline_length</code>.</p>
 <h3 id="delegator"><a class="header" href="#delegator">Delegator</a></h3>
 <p>A delegator may have any number of delegations to any number of validators. Delegations are stored in <a href="#bonds">bonds</a>.</p>
 <h4 id="delegator-actions"><a class="header" href="#delegator-actions">Delegator actions</a></h4>
@@ -214,6 +212,7 @@ Unbonded tokens may be withdrawn in or after the <a href="#unbond">unbond's epoc
 <p>An unbonding action (validator <em>unbond</em> or delegator <em>undelegate</em>) requested by the bond's source account in epoch <code>n</code> creates an &quot;unbond&quot; with epoch set to <code>n + unbounding_length</code>. We also store the epoch of the bond(s) from which the unbond is created in order to determine if the unbond should be slashed if a fault occurred within the range of bond epoch (inclusive) and unbond epoch (exclusive).</p>
 <p>Any unbonds created in epoch <code>n</code> decrements the bond's validator's total bonded tokens by the bond's token amount and update the voting power for epoch <code>n + unbonding_length</code>.</p>
 <p>An &quot;unbond&quot; with epoch set to <code>n</code> may be withdrawn by the bond's source address in or any time after the epoch <code>n</code>. Once withdrawn, the unbond is deleted and the tokens are credited to the source account.</p>
+<p>Note that unlike bonding and unbonding where token changes are delayed to some future epochs (pipeline or unbonding offset), the token withdrawal applies immediately. This because when the tokens are withdrawable, they are already &quot;unlocked&quot; from the PoS system and do not contribute to voting power.</p>
 <h3 id="staking-rewards"><a class="header" href="#staking-rewards">Staking rewards</a></h3>
 <p>Until we have programmable validity predicates, rewards can use the mechanism outlined in the <a href="https://drops.dagstuhl.de/opus/volltexte/2020/11974/pdf/OASIcs-Tokenomics-2019-10.pdf">F1 paper</a>, but it should use the exponential model, so that withdrawing rewards more frequently provides no additional benefit (this is a design constraint we should follow in general, we don't want to accidentally encourage transaction spam). This should be written in a way that allows for a natural upgrade to a validator-customisable rewards model (defaulting to this one) if possible.</p>
 <p>To a validator who proposed a block, the system rewards tokens based on the <code>block_proposer_reward</code> <a href="#system-parameters">system parameter</a> and each validator that voted on a block receives <code>block_vote_reward</code>.</p>
@@ -252,7 +251,7 @@ Unbonded tokens may be withdrawn in or after the <a href="#unbond">unbond's epoc
 <p>The default values that are relative to epoch duration assume that an epoch last about 24 hours.</p>
 <ul>
 <li><code>max_validator_slots</code>: Maximum active validators, default <code>128</code></li>
-<li><code>pipeline_len</code>: Pipeline length in number of epochs, default <code>2</code></li>
+<li><code>pipeline_len</code>: Pipeline length in number of epochs, default <code>2</code> (see <a href="https://github.com/cosmos/cosmos-sdk/blob/019444ae4328beaca32f2f8416ee5edbac2ef30b/docs/architecture/adr-039-epoched-staking.md#pipelining-the-epochs">https://github.com/cosmos/cosmos-sdk/blob/019444ae4328beaca32f2f8416ee5edbac2ef30b/docs/architecture/adr-039-epoched-staking.md#pipelining-the-epochs</a>)</li>
 <li><code>unboding_len</code>: Unbonding duration in number of epochs, default <code>6</code></li>
 <li><code>votes_per_token</code>: Used in validators' voting power calculation, default 100‱ (1 voting power unit per 1000 tokens)</li>
 <li><code>block_proposer_reward</code>: Amount of tokens rewarded to a validator for proposing a block</li>
@@ -344,7 +343,7 @@ struct WeightedValidator {
 }
 
 struct ValidatorSet {
-  /// Active validator set with maximum size equal to `max_active_validators`
+  /// Active validator set with maximum size equal to `max_validator_slots`
   active: BTreeSet&lt;WeightedValidator&gt;,
   /// All the other validators that are not active
   inactive: BTreeSet&lt;WeightedValidator&gt;,
@@ -388,7 +387,6 @@ type TotalVotingPower = Epoched&lt;VotingPower&gt;;
 
 enum ValidatorState {
   Inactive,
-  Pending,
   Candidate,
 }
 </code></pre>

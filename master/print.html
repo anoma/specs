@@ -2755,7 +2755,17 @@ pub struct Transfer {
 </li>
 </ul>
 </li>
-<li>If the source address is the MASP validity predicate, then no transparent inputs are permitted in the shielded transaction</li>
+<li>If the source address is the MASP validity predicate, then:
+<ul>
+<li>no transparent inputs are permitted in the shielded transaction</li>
+<li>the transparent transaction value pool's amount must equal the containing wrapper transaction's fee amount</li>
+<li>the transparent transaction value pool's asset type must be derived from the containing wrapper transaction's fee token
+<ul>
+<li>the derivation must be done as specified in <code>0.3 Derivation of Asset Generator from Asset Identifer</code></li>
+</ul>
+</li>
+</ul>
+</li>
 <li>If the source address is not the MASP validity predicate, then:
 <ul>
 <li>there must be exactly one transparent input in the shielded transaction and:

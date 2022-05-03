@@ -248,9 +248,19 @@ pool is asset-hiding.</p>
 <li>Why? The unspent note's Merkle path can only be constructed with knowledge of all prior note commitments</li>
 </ul>
 </li>
+<li>All transactions subsequent to the one-time payment's still have to be scanned before it can be safely spent
+<ul>
+<li>Why? The received note may have been subsequently nullified by this or another client</li>
+</ul>
+</li>
 <li>For payments known to have been received recently, this method is most likely only marginally faster than backwards scanning
 <ul>
 <li>Relevance: Empirical evidence from Zcash shows that unspent notes are most likely to be recently broadcasted ones</li>
+</ul>
+</li>
+<li>Decryptions still eventually have to be attempted on all other shielded transactions in the blockchain
+<ul>
+<li>Why? To ensure that user still has access to all their other unspent notes</li>
 </ul>
 </li>
 </ul>

@@ -421,8 +421,18 @@ When the execution engine has finished with a transaction, it communicates to th
 <h2 id="summary-1"><a class="header" href="#summary-1">Summary</a></h2>
 <p>Validators run the mempool protocol. 
 They receive transactions from clients, store them, and make them available for the <a href="architecture/consensus/typhon/execution.html">execution engine</a> to read. 
-The mempool protocol also produces a DAG of <em>headers</em>, which reference batches of transactions (via hash), and prove that those transactions are available for the <a href="architecture/consensus/typhon/execution.html">execution engine</a>. 
+The mempool protocol, which is based on <a href="https://arxiv.org/abs/2105.11827">Narwhal</a> also produces a <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a> of <em>headers</em>, which reference batches of transactions (via hash), and prove that those transactions are available for the <a href="architecture/consensus/typhon/execution.html">execution engine</a>. 
 These headers are ultimately what the <a href="architecture/consensus/typhon/heterogeneous_paxos.html">consensus</a> decides on, in order to establish a total order of transactions.</p>
+<h2 id="heterogeneous-narwhal"><a class="header" href="#heterogeneous-narwhal">Heterogeneous Narwhal</a></h2>
+<p>The core idea here is that we run an instance of Narwhal for each learner. 
+For chimera chains, an &quot;atomic batch&quot; of transactions can be stored in any involved learner's Narwhal. </p>
+<p>We also make 2 key changes:</p>
+<ul>
+<li>The availability proofs must show that any transaction is sufficiently available for all learners. 
+This should not be a problem, since in Heterogeneous Paxos, for any connected learner graph, any learner's quorum is a weak quorum for all learners. </li>
+<li>Whenever a validator's Narwhal primary produces a batch, it must link in that batch not only to a quorum of that learner's block headers from the prior round, but also to the most recent batch this validator has produced <em>for any learner</em>. 
+This ensures that, within a finite number of rounds (3, I think), any transaction batch referenced by a weak quorum of batches in its own Narwhal will be (transitively) referenced by all batches in all Narwhals for entangled learners. </li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
 <h1 id="heterogeneous-paxos"><a class="header" href="#heterogeneous-paxos">Heterogeneous Paxos</a></h1>
 <h2 id="summary-2"><a class="header" href="#summary-2">Summary</a></h2>

@@ -234,6 +234,26 @@ sanity check, the pool's balance of any asset may not end up negative
 ledger's perspective, transact in that asset; therefore, the asset's own
 VP is not run as described above, and cannot be because the shielded
 pool is asset-hiding.</p>
+<h2 id="one-time-payment-addresses"><a class="header" href="#one-time-payment-addresses">One-time Payment Addresses</a></h2>
+<p>One-time payment addresses are designed to facilitate instant recognition of shielded payments. They are marked with the special bech32m prefix <code>otpatest</code> which indicates that payers should additionally place the newly created note at a storage key computed from the hash of the payment address. This same storage key is what the payee should query for unspent notes fulfilling the given payment request.</p>
+<h3 id="pros"><a class="header" href="#pros">Pros</a></h3>
+<ul>
+<li>Instant determination of whether funds have or have not been received</li>
+<li>Address encoding is almost exactly the same as for normal shielded payment addresses</li>
+</ul>
+<h3 id="cons"><a class="header" href="#cons">Cons</a></h3>
+<ul>
+<li>All transaction's prior to the one-time payment's still have to be scanned before it can be spent
+<ul>
+<li>Why? The unspent note's Merkle path can only be constructed with knowledge of all prior note commitments</li>
+</ul>
+</li>
+<li>For payments known to have been received recently, this method is most likely only marginally faster than backwards scanning
+<ul>
+<li>Relevance: Empirical evidence from Zcash shows that unspent notes are most likely to be recently broadcasted ones</li>
+</ul>
+</li>
+</ul>
 <h2 id="client-capabilities"><a class="header" href="#client-capabilities">Client capabilities</a></h2>
 <p>The client should be able to:</p>
 <ul>
@@ -655,8 +675,6 @@ pub struct Transfer {
 </ul>
 </li>
 </ul>
-<h2 id="one-time-payment-addresses"><a class="header" href="#one-time-payment-addresses">One-time Payment Addresses</a></h2>
-<p>One-time payment addresses are designed to facilitate instant recognition of shielded payments. They are marked with the special bech32m prefix <code>otpatest</code> which indicates that payers should additionally place the newly created note at a storage key computed from the hash of the payment address. This same storage key is what the payee should query for unspent notes fulfilling the given payment request.</p>
 
                     </main>
 

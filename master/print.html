@@ -2789,6 +2789,11 @@ pub struct Transfer {
 <li>As a consequence, an amount exceeding the gas fees must be available in a transparent account in order to execute an unshielding transaction - this prevents denial of service attacks</li>
 </ul>
 </li>
+<li>Using the MASP sentinel transaction key for transaction signing indicates that gas be drawn from the transaction's transparent value pool
+<ul>
+<li>In this case, the gas will be taken from the MASP transparent address if the shielded transaction is proven to be valid</li>
+</ul>
+</li>
 </ul>
 <h2 id="multi-asset-shielded-pool-specification-differences-from-zcash-protocol-specification"><a class="header" href="#multi-asset-shielded-pool-specification-differences-from-zcash-protocol-specification">Multi-Asset Shielded Pool Specification Differences from Zcash Protocol Specification</a></h2>
 <p>The <a href="https://raw.githubusercontent.com/anoma/masp/main/docs/multi-asset-shielded-pool.pdf">Multi-Asset Shielded Pool Specication</a> referenced above is in turn an extension to the <a href="https://zips.z.cash/protocol/protocol.pdf">Zcash Protocol Specification</a>. Below, the changes from the Zcash Protocol Specification assumed to have been integrated into the Multi-Asset Shielded Pool Specification are listed:</p>

@@ -655,6 +655,8 @@ pub struct Transfer {
 </ul>
 </li>
 </ul>
+<h2 id="one-time-payment-addresses"><a class="header" href="#one-time-payment-addresses">One-time Payment Addresses</a></h2>
+<p>One-time payment addresses are designed to facilitate instant recognition of shielded payments. They are marked with the special bech32m prefix <code>otpatest</code> which indicates that payers should additionally place the newly created note at a storage key computed from the hash of the payment address. This same storage key is what the payee should query for unspent notes fulfilling the given payment request.</p>
 
                     </main>
 

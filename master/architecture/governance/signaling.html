@@ -145,7 +145,7 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
 <h1 id="namada-governance"><a class="header" href="#namada-governance">Namada Governance</a></h1>
-<p>Anoma introduce a governance mechanism to propose and apply protocol changes with and without the need for an hard fork. Anyone holding some <code>NAM</code> will be able to prosose some changes to which delegators and validator will cast their <code>yay</code> or <code>nay</code> votes. Governance on Anoma supports both <code>signaling</code> and <code>voting</code> mechanism. The difference between the the two, is that the former is needed when the changes require an hard fork. In cases where the chain is not able to produce blocks anymore, Anoma relies on <code>off chain</code> signaling to agree on a common move.</p>
+<p>Anoma introduces a governance mechanism to propose and apply protocol changes with  or without the need for an hard fork. Anyone holding some <code>NAM</code> will be able to propose some changes to which delegators and validators will cast their <code>yay</code> or <code>nay</code> votes. Governance on Anoma supports both <code>signaling</code> and <code>voting</code> mechanism. The difference between the the two is that the former is needed when the changes require an hard fork. In cases where the chain is not able to produce blocks anymore, Anoma relies on <a href="#off-chain-protocol">off chain</a> signaling to agree on a common move.</p>
 <h2 id="on-chain-protocol"><a class="header" href="#on-chain-protocol">On-chain protocol</a></h2>
 <h3 id="governance-address"><a class="header" href="#governance-address">Governance Address</a></h3>
 <p>Governance adds 2 internal addresses:</p>
@@ -153,7 +153,7 @@
 <li>GovernanceAddress</li>
 <li>TreasuryAddress</li>
 </ul>
-<p>The first address contains all the proposals under his address space.
+<p>The first address contains all the proposals under its address space.
 The second address holds the funds of rejected proposals.</p>
 <h3 id="governance-storage"><a class="header" href="#governance-storage">Governance storage</a></h3>
 <p>Each proposal will be stored in a sub-key under the internal proposal address. The storage keys involved are:</p>
@@ -197,17 +197,17 @@ Just like Pos, also governance has his own storage space. The `GovernanceAddress
 - Lock some funds &gt;= `MIN_PROPOSAL_FUND`
 - Contains a unique ID
 - Contains a start, end and grace Epoch
-- The difference between StartEpoch and EndEpoch should be &gt;= `MIN_PROPOSAL_PERIOD` * constant.
+- The difference between StartEpoch and EndEpoch should be &gt;= `MIN_PROPOSAL_PERIOD * constant`.
 - Should contain a text describing the proposal with length &lt; `MAX_PROPOSAL_CONTENT_SIZE` characters.
 - Vote can be done only by a delegator or validator
 - Validator can vote only in the initial 2/3 of the whole proposal duration (`EndEpoch` - `StartEpoch`)
 - Due to the previous requirement, the following must be true,`(EndEpoch - StartEpoch) % 3 == 0` 
-- If defined `proposalCode`, should be the wasm bytecode rappresentation of the changes. This code is triggered in case the proposal has a position outcome.
+- If defined, `proposalCode` should be the wasm bytecode rappresentation of the changes. This code is triggered in case the proposal has a position outcome.
 - `GraceEpoch` should be greater than `EndEpoch` of at least `MIN_PROPOSAL_GRACE_EPOCHS`
 
 `MIN_PROPOSAL_FUND`, `MAX_PROPOSAL_CODE_SIZE`, `MIN_PROPOSAL_GRACE_EPOCHS`, `MAX_PROPOSAL_CONTENT_SIZE` and `MIN_PROPOSAL_PERIOD` are parameters of the protocol.
 Once a proposal has been created, nobody can modify any of its fields.
-If `proposalCode`  is `Emtpy` or `None` , the proposal upgrade will need to be done via hard fork.
+If `proposalCode`  is `Empty` or `None` , the proposal upgrade will need to be done via hard fork.
 
 It is possible to check the actual implementation [here](https://github.com/anoma/anoma/blob/master/shared/src/ledger/governance/mod.rs#L69).
 
@@ -222,7 +222,7 @@ This means that corresponding VPs need to handle these cases.
 
 The proposal transaction will have the following structure, where `author` address will be the refund address.
 
-```rust=
+```rust
 struct OnChainProposal {
     id: u64
     content: Vec&lt;u8&gt;
@@ -235,7 +235,7 @@ struct OnChainProposal {
 </code></pre>
 <h3 id="vote-transaction"><a class="header" href="#vote-transaction">Vote transaction</a></h3>
 <p>Vote transactions have the following structure:</p>
-<pre><pre class="playground"><code class="language-rust=">
+<pre><pre class="playground"><code class="language-rust">
 <span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>struct OnChainVote {
@@ -246,24 +246,29 @@ struct OnChainProposal {
 <span class="boring">}
 </span></code></pre></pre>
 <p>Vote transaction creates or modify the following storage key:</p>
-<pre><code>/GovernanceAddress/proposal/id/vote/address: Enum(yay|nay)
+<pre><code>/GovernanceAddress/proposal/&lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:1em;vertical-align:-0.25em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot; style=&quot;margin-right:0.03588em;&quot;&gt;v&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;o&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;delegation_address/voter_address: Enum(yay|nay)
 </code></pre>
 <p>The storage key will only be created if the transaction is signed either by a validator or a delagator. 
-Validators will be able to vote only for 2/3 of the total voting period, meanwhile delegators can vote until the end of the voting period.
-If a delegator votes opposite to its validator this will <em>overri</em>de the corresponding vote of this validator (e.g. if a delegator has a voting power of 200 and votes opposite to the delegator holding these tokens, than 200 will be subtracted from the votig power of the involved validator).</p>
+Validators will be able to vote only for 2/3 of the total voting period, while delegators can vote until the end of the voting period.</p>
+<p>If a delegator votes opposite to its validator, this will <em>override</em> the corresponding vote of this validator (e.g. if a delegator has a voting power of 200 and votes opposite to the delegator holding these tokens, than 200 will be subtracted from the votig power of the involved validator).</p>
+<p>As a small form of space optimization, if a delegator votes accordingly to its validator, the vote will not actually be submitted to the chain. This logic is applied only if the following conditions are satisfied:</p>
+<ul>
+<li>The transaction is not being forced</li>
+<li>The vote is submitted in the last third of the voting period (the one exclusive to delegators). This second condition is necessary to prevent a validator from changing its vote after a delegator vote has been submitted, effectively stealing the delegator's vote.</li>
+</ul>
 <h3 id="tally"><a class="header" href="#tally">Tally</a></h3>
-<p>At the beginning of each new epoch (and only then), in the <code>FinalizeBlock</code> event, talling will occur for all the proposals ending at this epoch (specified via the <code>endEpoch</code> field).
-The proposal has a positive outcome if 2/3 of the staked <code>NAM</code> total is voting <code>yay</code>. Tallying is compute with the following rules</p>
+<p>At the beginning of each new epoch (and only then), in the <code>FinalizeBlock</code> event, tallying will occur for all the proposals ending at this epoch (specified via the <code>endEpoch</code> field).
+The proposal has a positive outcome if 2/3 of the staked <code>NAM</code> total is voting <code>yay</code>. Tallying is computed with the following rules:</p>
 <ul>
 <li>Sum all the voting power of validators that voted <code>yay</code></li>
 <li>For any validator that voted <code>yay</code>, subtract the voting power of any delegation that voted <code>nay</code></li>
 <li>Add voting power for any delegation that voted <code>yay</code> (whose corresponding validator didn't vote <code>yay</code>)</li>
 <li>If the aformentioned sum divided by the total voting power is &gt;= 0.66, the proposal outcome is positive otherwise negative.</li>
 </ul>
-<p>All the computation above must be made at the epoch specified in the  <code>start_epoch</code> field of the proposal.</p>
+<p>All the computation above must be made at the epoch specified in the  <code>end_epoch</code> field of the proposal.</p>
 <p>It is possible to check the actual implementation <a href="https://github.com/anoma/anoma/blob/master/shared/src/ledger/governance/utils.rs#L68">here</a>.</p>
 <h3 id="refund-and-proposal-execution-mechanism"><a class="header" href="#refund-and-proposal-execution-mechanism">Refund and Proposal Execution mechanism</a></h3>
-<p>Together with the talling, in the first block at the beginning of each epoch, in the <code>FinalizeBlock</code> event, the protocol will manage the execution of accepted proposals and refunding. For each ended proposal with a positive outcome, will refund the locked funds from <code>GovernanceAddress</code> to the proposal author address (specified in the proposal <code>author</code> field). For each proposal that has been rejected, instead, the locked funds will be moved to the <code>TreasuryAddress</code>. Moreover, if the proposal had a positive outcome and <code>proposalCode</code> is defined, these changes will be executed right away.</p>
+<p>Together with tallying, in the first block at the beginning of each epoch, in the <code>FinalizeBlock</code> event, the protocol will manage the execution of accepted proposals and refunding. For each ended proposal with a positive outcome, it will refund the locked funds from <code>GovernanceAddress</code> to the proposal author address (specified in the proposal <code>author</code> field). For each proposal that has been rejected, instead, the locked funds will be moved to the <code>TreasuryAddress</code>. Moreover, if the proposal had a positive outcome and <code>proposalCode</code> is defined, these changes will be executed right away.</p>
 <p>If the proposal outcome is positive and current epoch is equal to the proposal <code>grace_epoch</code>, in the <code>FinalizeBlock</code> event:</p>
 <ul>
 <li>transfer the locked funds to the proposal author</li>
@@ -317,7 +322,7 @@ The proposal has a positive outcome if 2/3 of the staked <code>NAM</code> total 
   signature: Base64&lt;Vec&lt;u8&gt;&gt;
 }
 </code></pre>
-<p>The signature is produced over the hash of the concatenation of <code>content</code>, <code>author</code>, <code>votingStart</code> and <code>votingEnd</code>.</p>
+<p>The signature is produced over the hash of the concatenation of: <code>content</code>, <code>author</code>, <code>votingStart</code> and <code>votingEnd</code>.</p>
 <h3 id="create-vote"><a class="header" href="#create-vote">Create vote</a></h3>
 <p>A CLI command to create a signed JSON rappresentation of a vote. The JSON will have the following structure:</p>
 <pre><code>{
@@ -327,9 +332,9 @@ The proposal has a positive outcome if 2/3 of the staked <code>NAM</code> total 
   vote: Enum(yay|nay)
 }
 </code></pre>
-<p>The proposalHash is produced over the concatenation of <code>content</code>, <code>author</code>, <code>votingStart</code>, <code>votingEnd</code>, <code>voter</code> and <code>vote</code>.</p>
+<p>The proposalHash is produced over the concatenation of: <code>content</code>, <code>author</code>, <code>votingStart</code>, <code>votingEnd</code>, <code>voter</code> and <code>vote</code>.</p>
 <h3 id="tally-1"><a class="header" href="#tally-1">Tally</a></h3>
-<p>Same mechanism as OnChain tally but instead of reading the data from storage it will require a list of serialized json votes.</p>
+<p>Same mechanism as <a href="#tally">on chain</a> tally but instead of reading the data from storage it will require a list of serialized json votes.</p>
 <h2 id="interfaces"><a class="header" href="#interfaces">Interfaces</a></h2>
 <ul>
 <li>Ledger CLI</li>

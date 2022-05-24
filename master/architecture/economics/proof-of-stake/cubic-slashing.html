@@ -149,7 +149,7 @@
 <p>When a slash is detected:</p>
 <ol>
 <li>Using the height of the infraction, calculate the epoch just after which stake bonded at the time of infraction could have been fully unbonded. Enqueue the slash for processing at the end of that epoch (so that it will be processed before unbonding could have completed, and hopefully long enough for any other misbehaviour from around the same height as this misbehaviour to also be detected).</li>
-<li>Jail the validator in question (this will apply at the end of the current epoch). While the validator is jailed, it should be removed from the validator set (also being effective from the end of the current epoch).</li>
+<li>Jail the validator in question (this will apply at the end of the current epoch). While the validator is jailed, it should be removed from the validator set (also being effective from the end of the current epoch). Note that this is the only instance in our proof-of-stake model when the validator set is updated without waiting for the pipeline offset.</li>
 <li>Prevent the delegators to this validator from altering their delegations in any way until the enqueued slash is processed.</li>
 </ol>
 <p>At the end of each epoch, in order to process any slashes scheduled for processing at the end of that epoch:</p>
@@ -157,17 +157,18 @@
 <li>Iterate over all slashes for infractions committed within a range of (-1, +1) epochs worth of block heights (this may need to be a protocol parameter) of the infraction in question.</li>
 <li>Calculate the slash rate according to the following function:</li>
 </ol>
-<p><em>Note: the voting power of a slash is the voting power of the validator <strong>when they violated the protocol</strong>, not the voting power now or at the time of any of the other infractions. This does mean that these voting powers may not sum to 1, but this method should still be close to the incentives we want, and can't really be changed without making the system easier to game.</em></p>
-<pre><code class="language-typescript=">function calculateSlashRate(slashes) {
-  votingPowerFraction = 0
-  for slash in slashes:
-    votingPowerFraction += slash.validator.votingPowerFraction
-  return max(0.01, min(1, votingPowerFraction**2 * 9))
-  // minimum slash rate is 1%
-  // then exponential between 0 &amp; 1/3 voting power
-  // we can make this a more complex function later
-}
+<pre><code class="language-haskell =">calculateSlashRate :: [Slash] -&gt; Float
+
+calculateSlashRate slashes = 
+    let votingPowerFraction = sum [ votingPowerFraction (validator slash) | slash &lt;- slashes]
+	in max 0.01 (min 1 (votingPowerFraction**2)*9)
+  -- minimum slash rate is 1%
+  -- then exponential between 0 &amp; 1/3 voting power
+  -- we can make this a more complex function later
 </code></pre>
+<blockquote>
+<p>Note: The voting power of a slash is the voting power of the validator <strong>when they violated the protocol</strong>, not the voting power now or at the time of any of the other infractions. This does mean that these voting powers may not sum to 1, but this method should still be close to the incentives we want, and can't really be changed without making the system easier to game.</p>
+</blockquote>
 <ol start="3">
 <li>Set the slash rate on the now &quot;finalised&quot; slash in storage.</li>
 <li>Update the validators' stored voting power appropriately.</li>

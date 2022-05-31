@@ -1548,7 +1548,7 @@ which naturally can be redeemed on Ethereum at a later time. Furthermore, it all
 minting of wrapped tokens on Ethereum backed by escrowed assets on Namada.</p>
 <p>The Namada Ethereum bridge system consists of:</p>
 <ul>
-<li>Ethereum state inclusion onto Namada.</li>
+<li>An Ethereum full node for including relevant Ethereum events into Namada.</li>
 <li>A set of validity predicates on Namada which roughly implements <a href="https://docs.cosmos.network/v0.42/modules/ibc/">ICS20</a> fungible token transfers.</li>
 <li>A set of Ethereum smart contracts.</li>
 <li>A Namada bridge process</li>
@@ -1566,65 +1566,83 @@ locked to limit the damage a forking attack on Namada can do. To make an attack
 more cumbersome we will also add a limit on how fast wrapped ETH can be
 redeemed. This will not add more security, but rather make the attack more
 inconvenient.</p>
-<h2 id="ethereum-state-inclusion"><a class="header" href="#ethereum-state-inclusion">Ethereum State Inclusion</a></h2>
-<p>We want to store data identifying which Ethereum blocks have been seen
-and validated by at least 2/3 of the staking validators in the blockchain storage.
-The data stored from each Ethereum block will be:</p>
-<ul>
-<li>The block header</li>
-<li>The block hash</li>
-<li>Messages from the Ethereum smart contracts relevant
-to the bridge.
-We may also we to include Merkle proofs of inclusion of
-these messages in the relevant blocks. We might also implement policies to
-prune old/irrelevant data or do checkpointing.</li>
-</ul>
-<p>Each piece of block data should have a list of the validators that have seen
-this block and the current amount of stake associated with it. This
+<h2 id="ethereum-events-attestation"><a class="header" href="#ethereum-events-attestation">Ethereum Events Attestation</a></h2>
+<p>We want to store events from the smart contracts of our bridge onto Namada.
+We need to have consensus on these events, we will only include those that 
+have been seen  and validated by at least 2/3 of the staking validators in
+the blockchain storage.</p>
+<p>A valid message should correspond to the ICS20 fungible token packet. That 
+is to say it should be of the form:</p>
+<pre><pre class="playground"><code class="language-rust">
+<span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct EthEvent {
+    denom: String,
+    amount: u256,
+    sender: String,
+    receiver: String,
+    nonce: u64,
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The specification of the <code>denom</code> field may be custom to this bridge and not
+directly conform with the ICS20 specification. The nonce should just be an 
+increasing value. This helps keep message hashes unique. Validators should
+ignore improperly formatted events.</p>
+<p>Each event should have a list of the validators that have seen
+this event and the current amount of stake associated with it. This
 will need to be appropriately adjusted across epoch boundaries. However,
-once a block has been seen by 2/3 of the staking validators, it is locked into a
-<code>seen</code> state. Thus, even if after an epoch that block has no longer been
-reported as seen by 2/3 of the new staking validators set, it is still
+once an event has been seen by 2/3 of the voting power, it is locked into a
+<code>seen</code> state. Thus, even if after an epoch that event has no longer been
+reported as seen by 2/3 of the new staking validators voting power, it is still
 considered as <code>seen</code>.</p>
-<p>To make this easy, we take the approach of always overwriting the state with
+<p>Each event from Ethereum should include the minimum number of confirmations
+necessary to be considered seen. Validators should not vote to include events
+that have not met the required number of confirmations. Furthermore, validators
+should not look at events that have not reached protocol specified minimum
+number of confirmations (regardless of what is specified in an event). This 
+constant may be changeable via governance. Voting on unconfirmed events is
+considered a slashable offence.</p>
+<p>To make including new events easy, we take the approach of always overwriting the state with
 the new state rather than applying state diffs. The storage keys involved
 are:</p>
-<pre><code>/eth_block/$block_hash/header : Vec&lt;u8&gt;
-/eth_block/$block_hash/messages : Vec&lt;Vec&lt;u8&gt;&gt;
-/eth_block/$block_hash/seen_by : Vec&lt;Address&gt;
-/eth_block/$block_hash/voting_power: u64
-/eth_block/$block_hash/seen: bool
-/eth_block/$block_hash/? : [u8; 32]
-# not yet decided
-/eth_block/$block_hash/merkle_proofs : Vec&lt;Vec&lt;u8&gt;&gt;
+<pre><code>&lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:1em;vertical-align:-0.25em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;h&lt;/span&gt;&lt;span class=&quot;msupsub&quot;&gt;&lt;span class=&quot;vlist-t vlist-t2&quot;&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.1514em;&quot;&gt;&lt;span style=&quot;top:-2.55em;margin-left:0em;margin-right:0.05em;&quot;&gt;&lt;span class=&quot;pstrut&quot; style=&quot;height:2.7em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;sizing reset-size6 size3 mtight&quot;&gt;&lt;span class=&quot;mord mathnormal mtight&quot;&gt;m&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-s&quot;&gt;​&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.15em;&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot; style=&quot;margin-right:0.03588em;&quot;&gt;g&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;msg_hash/body : Vec&lt;u8&gt;
+/eth_msgs/&lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:1em;vertical-align:-0.25em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mord mathnormal&quot; style=&quot;margin-right:0.03588em;&quot;&gt;g&lt;/span&gt;&lt;span class=&quot;msupsub&quot;&gt;&lt;span class=&quot;vlist-t vlist-t2&quot;&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.3361em;&quot;&gt;&lt;span style=&quot;top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;&quot;&gt;&lt;span class=&quot;pstrut&quot; style=&quot;height:2.7em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;sizing reset-size6 size3 mtight&quot;&gt;&lt;span class=&quot;mord mathnormal mtight&quot;&gt;h&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-s&quot;&gt;​&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.15em;&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;h&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;see&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;msupsub&quot;&gt;&lt;span class=&quot;vlist-t vlist-t2&quot;&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.3361em;&quot;&gt;&lt;span style=&quot;top:-2.55em;margin-left:0em;margin-right:0.05em;&quot;&gt;&lt;span class=&quot;pstrut&quot; style=&quot;height:2.7em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;sizing reset-size6 size3 mtight&quot;&gt;&lt;span class=&quot;mord mathnormal mtight&quot;&gt;b&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-s&quot;&gt;​&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.15em;&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot; style=&quot;margin-right:0.03588em;&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7224em;vertical-align:-0.0391em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot; style=&quot;margin-right:0.22222em;&quot;&gt;V&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;ec&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7335em;vertical-align:-0.0391em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;dd&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;ress&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:1em;vertical-align:-0.25em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;t&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;h&lt;/span&gt;&lt;span class=&quot;msupsub&quot;&gt;&lt;span class=&quot;vlist-t vlist-t2&quot;&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.1514em;&quot;&gt;&lt;span style=&quot;top:-2.55em;margin-left:0em;margin-right:0.05em;&quot;&gt;&lt;span class=&quot;pstrut&quot; style=&quot;height:2.7em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;sizing reset-size6 size3 mtight&quot;&gt;&lt;span class=&quot;mord mathnormal mtight&quot;&gt;m&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-s&quot;&gt;​&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.15em;&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot; style=&quot;margin-right:0.03588em;&quot;&gt;g&lt;/span&gt;&lt;span class=&quot;mord mathnormal&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;/&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;msg_hash/voting_power: u64
+/eth_msgs/msg_hash/seen: bool
 </code></pre>
 <p>For every Namada block proposal, the vote extension of a validator should include
-the headers, hash, &amp; smart contract messages (possibly with Merkle proofs)
-of the Ethereum blocks they have seen via their full node such that:</p>
+the events of the Ethereum blocks they have seen via their full node such that:</p>
 <ol>
-<li>Has not been marked as <code>seen</code> by Namada</li>
-<li>The storage value <code>/eth_block/block_hash/seen_by</code> does not include their
+<li>The storage value <code>/eth_msgs/$msg_hash/seen_by</code> does not include their
 address.</li>
-<li>Is a descendant of a block they have seen (even if it is not marked <code>seen</code>)</li>
+<li>Is correctly formatted.</li>
+<li>Has reached the required number of confirmations</li>
 </ol>
-<p>After a Namada block is finalized, every validator should apply an internal
-transaction making the proposed state change of the above form. The block proposer
-for the next block subsequently includes a transaction to that end in their block 
-proposal. This aggregated state change needs to be validated by at least 2/3 of
-the staking validators as usual.</p>
-<p>Changes to <code>/eth_block</code> are only ever made by internal transactions crafted by 
+<p>These vote extensions will be given to the next block proposer who will
+aggregate those that it can verify and will include them in their proposal.
+Validators will check the validity of the new votes as part of <code>ProcessProposal</code>.
+This includes checking signatures, that votes are really active validators,
+the calculation of backed voting power, etc.</p>
+<p>After this block is finalized, the events are included into Namada storage.
+Once a message is marked as <code>seen</code>, the necessary transaction should be crafted
+internally by the ledger and applied in the same block as part of <code>FinalizeBlock</code>.
+Thus, the value of <code>/eth_msgs/$msg_hash/seen</code> should also indicate if the
+event has been applied on the Namada side.</p>
+<p>Changes to <code>/eth_msgs</code> are only ever made by internal transactions crafted by
 validators deterministically from the aggregate of vote extensions for the last Tendermint
-round. That is, changes to <code>/eth_block</code> are calculated and applied during the <code>FinalizeBlock</code> stage 
+round. That is, changes to <code>/eth_msgs</code> are calculated and applied during the <code>FinalizeBlock</code> stage
 of ABCI++ for block <code>n</code>, and then included (and validated) in a transaction in block <code>n+1</code>.
-It should not be possible for <code>/eth_block</code> storage to be modified by transactions submitted
+It should not be possible for <code>/eth_msgs</code> storage to be modified by transactions submitted
 from outside the ledger.</p>
 <h2 id="namada-validity-predicates"><a class="header" href="#namada-validity-predicates">Namada Validity Predicates</a></h2>
-<p>There will be an internal account - <code>#EthBridge</code> - the storage of which will contain:</p>
+<p>There will be an internal account - <code>#EthVerifier</code> - whose validity predicate
+will verify the inclusion of events from Ethereum. This validity predicate will
+control the <code>/eth_msgs</code> storage subspace.</p>
+<p>There will be two other internal accounts:</p>
 <ul>
-<li>a queue of incoming transfers from Ethereum (under a <code>/queue</code> storage key)</li>
-<li>ledgers of balances for wrapped Ethereum assets (ETH and ERC20 tokens) structured in a <a href="https://github.com/anoma/anoma/issues/1102">&quot;multitoken&quot;</a> hierarchy</li>
+<li><code>#EthBridge</code> - the storage of which will contain ledgers of balances for wrapped Ethereum assets (ETH and ERC20 tokens) structured in a <a href="https://github.com/anoma/anoma/issues/1102">&quot;multitoken&quot;</a> hierarchy , </li>
+<li><code>#EthBridgeEscrow</code> which will hold in escrow wrapped Namada tokens which have been sent to Ethereum.</li>
 </ul>
-<p>Another internal account - <code>#EthBridgeEscrow</code> - will hold in escrow wrapped Namada tokens which have been sent to Ethereum.</p>
 <h3 id="transferring-assets-from-ethereum-to-namada"><a class="header" href="#transferring-assets-from-ethereum-to-namada">Transferring assets from Ethereum to Namada</a></h3>
 <p>We'll have a <code>TransferFromEthereum</code> data type which will look roughly like the following:</p>
 <pre><pre class="playground"><code class="language-rust">
@@ -1643,64 +1661,15 @@ struct TransferFromEthereum {
     receiver: NamadaAddress,
     /// the amount of wrapped Ethereum token to mint, or wrapped Namada token to release from escrow
     amount: Amount,
-    /// minimum number of Ethereum confirmations needed for the transfer to happen
-    min_confirmations: u8,
-    /// height of the Ethereum block at which the message appeared
-    height: u64,
-    /// the hash &amp; height of the latest descendant Ethereum block marked as `seen`
-    latest_descendant: ([u8; 32], u64)
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>The minimum number of confirmations indicated in the outgoing Ethereum message
-(maybe defaulting to 25 or 50 if unspecified) specifies the minimum number of
-confirmations in Ethereum block depth that must be reached before the assets will be
-minted on Namada. This is the purpose of the <code>/queue</code> for this validity
-predicate.</p>
-<p>The internal transaction that includes new Ethereum state into <code>/eth_block</code> must 
-also update <code>#EthBridge/queue</code> based on any newly seen blocks. <code>/eth_block/$block_hash/seen = true</code> 
-implies that that Ethereum block has been processed by the Ethereum bridge.</p>
-<p>Processing of the queue looks as follows:</p>
-<ol>
-<li>For each existing <code>TransferFromEthereum</code> in the <code>/queue</code>, update its number of 
-confirmations.</li>
-</ol>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl TransferFromEthereum {
-    /// Update the hash and height of the block `B` marked as `seen` in Namada
-    /// storage such that 
-    ///   1. `B` is a descendant of the block containing the original message
-    ///   2. `B` has the maximum height of all blocks satisfying 1.
-    fn update_latest_descendant(&amp;mut self, hash: [u8; 32], height: u64) {
-        if height &gt; self.latest_descendant.1 {
-            self.latest_descendant = (hash, height);    
-        }
-    }
-}
-<span class="boring">}
-</span></code></pre></pre>
-<ol start="2">
-<li>Add new <code>TransferFromEthereum</code> messages from the seen Ethereum block into the queue.</li>
-<li>For each <code>TransferFromEthereum</code> that is confirmed, make the transfer for the address 
-in the <code>receiver</code> field and also remove the <code>TransferFromEthereum</code> from the <code>/queue</code>.</li>
-</ol>
-<p>Step 3 may happen in a separate transaction to steps 1 and 2, as it looks only at <code>#EthBridge/queue</code>
-and doesn't depend on any state changes to `/eth_block.</p>
-<pre><pre class="playground"><code class="language-rust">
-<span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>impl TransferFromEthereum {
-    /// Check if the number of confirmations for the block containing
-    /// the original message exceeds the minimum number required to 
-    /// consider the message confirmed.
-    pub fn is_confirmed(&amp;self) -&gt; bool {
-        self.latest_descendant.1 - self.height &gt;= self.min_confirmations
-    }
-}
-<span class="boring">}
-</span></code></pre></pre>
+<p>The internal transaction that includes new events into <code>/eth_msgs</code> must 
+also update submit a tx containing a <code>TransferFromEthereum</code> instance based
+on any newly seen blocks. Thus <code>/eth_msgs/msg_hash/seen = true</code> 
+implies that an Ethereum event has been processed by the Ethereum bridge.
+For each <code>TransferFromEthereum</code> transaction, the included wasm code should make the transfer for the address 
+in the <code>receiver</code> field.</p>
 <p>Note that this means that a transfer initiated on Ethereum will automatically
 be seen and acted upon by Namada. The appropriate transfers of tokens to the
 given user will be included on chain free of charge and requires no
@@ -1862,6 +1831,7 @@ appropriate state change, emit logs, etc.</p>
 <ol>
 <li>We should bundle the Ethereum full node with the <code>namada</code> daemon executable.</li>
 </ol>
+<pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
 <h1 id="external-integrations"><a class="header" href="#external-integrations">External integrations</a></h1>
 <h2 id="integrations"><a class="header" href="#integrations">Integrations</a></h2>

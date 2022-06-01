@@ -2394,7 +2394,175 @@ where <span class="katex"><span class="katex-html" aria-hidden="true"><span clas
 <li><a href="architecture/ledger/shielded-execution/./masp/convert-circuit.html">Convert circuit</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
-<h1 id="trusted-setup"><a class="header" href="#trusted-setup">Trusted setup</a></h1>
+<h1 id="namada-trusted-setup"><a class="header" href="#namada-trusted-setup">Namada Trusted Setup</a></h1>
+<p>This spec assumes that you have some previous knowledge about Trusted Setup Ceremonies. If not, you might want to check the following two articles: <a href="https://zkproof.org/2021/06/30/setup-ceremonies/">Setup Ceremonies - ZKProof</a> and <a href="https://z.cash/technology/paramgen/">Parameter Generation - Zcash</a>. </p>
+<p>The Namada Trusted Setup (TS) consists of running the phase 2 of the MPC which is a circuit-specific step to construct the <a href="architecture/ledger/shielded-execution/./masp.html">Multi Asset Shielded Pool (MASP) Circuit</a>. Our phase 2 takes as input the Powers of Tau (phase 1) ran by Zcash that can be found <a href="https://download.z.cash/downloads/powersoftau/">here</a>.</p>
+<h2 id="overview-of-the-contribution-flow"><a class="header" href="#overview-of-the-contribution-flow">Overview of the contribution flow</a></h2>
+<p>NOTE: add CLI flag <code>--offline</code> for the contributors that run on an offline machine. The flag will skip all the steps where there is communication with the coordinator and go straight to the generation of parameters in step 14.</p>
+<ol>
+<li>Contributor downloads the Namada CLI source from GitHub, compiles it, runs it.</li>
+<li>CLI asks the Contributor a couple of questions:
+a) Do you want to participate in the incentivized trusted setup?
+- Yes. Asks for personal information: full name and email. 
+- No. Contribution will be identified as Anonymous.
+b) Do you want to take part in the contest?
+- Yes. This assumes that the Contributor will generate the parameters with another method than the default implementation and that in any case the contribution file will be uploaded through the CLI.
+- No. Pursue with the normal flow.</li>
+<li>CLI generates a <code>ed25519</code> key pair that will serve to communicate and sign requests with the HTTP REST API endpoints and receive any potential rewards.
+The private key is generated through <a href="https://docs.rs/tiny-bip39/latest/bip39/#">BIP39</a> where we use it as a seed for the <code>ed25519</code> key pair and a 24 word seed-phrase is presented to the user to back-up. </li>
+<li>CLI sends request to the HTTP REST API endpoint <code>contributor/join_queue</code>. Contributor is added to the queue of the ceremony.</li>
+<li>CLI polls periodically the HTTP REST API endpoint <code>contributor/queue_status</code> to get the current the position in the queue. CLI also sends periodically a heartbeat request to HTTP REST API endpoint <code>contributor/heartbeat</code> to tell the Coordinator that it is still connected. CLI shows the current position in the queue to the contributor.</li>
+<li>When Contributor is in position 0 in the queue, it leaves the queue. CLI can then acquire the lock of the next chunk by sending a request to the HTTP REST API endpoint <code>contributor/lock_chunk</code>.</li>
+<li>As soon as the file is locked on the Coordinator, the CLI asks for more info about the chunk through the endpoint <code>download/chunk</code>. This info is later needed to form a new contribution file and send it back to the Coordinator.</li>
+<li>CLI gets the actual blob challenge file by sending a request to the endpoint <code>contributor/challenge</code>.</li>
+<li>CLI saves challenge file <code>anoma_challenge_round_{round_number}.params</code> in the root folder.</li>
+<li>CLI computes challenge hash.</li>
+<li>CLI creates contribution file <code>anoma_contribution_round_{round_number}_public_key_{public_key}.params</code> in the root folder.</li>
+<li>Previous challenge hash is appended to the contribution file.</li>
+<li>Contributor decides whether to do the computation on the same machine or on a different machine.
+Do you want to use another machine to run your contribution?
+NOTE: be clear that if users choose to generate the parameters on a OFFLINE machine then they will have max. 15 min to do all the operations. </li>
+</ol>
+<ul>
+<li>No. Participant will use the Online Machine to contribute. CLI runs <code>contribute_masp()</code> that executes the same functions as in the <code>contribute()</code> function from the <code>masp-mpc</code> crate.
+CLI asks the contributor if he wants to input a custom seed of randomness instead of using the combination of entropy and OS randomness. In both cases, he has to input something.
+CLI creates a contribution file signature <code>ContributionFileSignature</code> of the contribution.</li>
+<li>Yes. Participant will use an Offline Machine to contribute. CLI display a message with instructions about the challenge and contribution files. Participant can export the Contribution file <code>anoma_contribution_round_{round_number}_public_key_{public_key}.params</code> to the Offline Machine and contribute from there. When the Contributor is done, he gives the path to the contribution file. Before continuing, CLI checks if the required files are available on path and if the transformation of the parameters is valid.
+NOTE: CLI will display a countdown of 10 min with an extension capability of 5 min.</li>
+</ul>
+<ol start="14">
+<li>CLI generates a json file saved locally that contains the full name, email, the public key used for the contribution, contribution hash, hash of the contribution file, contribution file signature, plus a signature of the metadata. -&gt; display the signature and message that needs to be posted somewhere over the Internet</li>
+<li>CLI uploads the chunk to the Coordinator by using the endpoint <code>upload/chunk</code>.</li>
+<li>When the contribution blob was transferred successfully to the Coordinator. CLI notifies the Coordinator that the chunk was uploaded by sending a request to endpoint <code>contributor/contribute_chunk</code>.</li>
+<li>Coordinator verifies that the chunk is valid by executing function <code>verify_transform()</code> from the crate <code>masp-mpc</code>. If the transformation is correct, it outputs the hash of the contribution.</li>
+<li>Coordinator calls <code>try_advance()</code> function that tries to advance to the next round as soon as all contributions are verified. If it succeeds, it removes the next contributor from the queue and adds him as contribturo to the next round. </li>
+<li>Repeat.</li>
+</ol>
+<h2 id="subcomponents"><a class="header" href="#subcomponents">Subcomponents</a></h2>
+<p><img src="https://hackmd.io/_uploads/BJ-OIAhD5.png" alt="" /></p>
+<p>Our implementation of the TS consists of the following subcomponents: </p>
+<ol>
+<li>A fork of the <a href="https://github.com/AleoHQ/aleo-setup/">Aleo Trusted Setup</a> where we re-used the Coordinator Library (CL) contained in the <code>phase1-coordinator</code> folder.</li>
+<li>A <a href="https://github.com/anoma/trusted-setup-ceremony/blob/master/phase1-coordinator/src/rest.rs">HTTP REST API</a> that interfaces with the CL.</li>
+<li>A <a href="https://github.com/anoma/trusted-setup-ceremony/tree/master/phase1-cli">CLI implementation</a> that communicates with the HTTP REST API endpoints.</li>
+<li>An integration of the <a href="https://github.com/heliaxdev/masp-mpc"><code>masp-mpc</code></a> crypto functions (<code>initialize</code>, <code>contribute</code> and <code>verify</code>) in the CL.</li>
+</ol>
+<p>Let's go through each subcomponents and describe them.</p>
+<h2 id="1-coordinator-library-cl"><a class="header" href="#1-coordinator-library-cl">1. Coordinator Library (CL)</a></h2>
+<h3 id="description"><a class="header" href="#description">Description</a></h3>
+<p>The CL handles the operation steps of the ceremony: adding a new contributor to the queue, authentificating a contributor, sending and receiving challenge files, removing inactive contributors, reattributing challenge file to a new contributor after a contributor dropped, verifying contributions, creating new files...</p>
+<h3 id="historical-context"><a class="header" href="#historical-context">&quot;Historical&quot; context</a></h3>
+<p>The CL was originally implemented for the Powers of Tau (phase 1 of the MPC). In this implementation, there was a tentative to optimise the whole operational complexity of the ceremony. In short, to reduce the contribution time to the parameters, the idea was to split the parameters during a round into multiple chunks that can be then distributed to multiple participants in parallel. That way, the computation time would be reduced by some linear factor on a per-round basis. You can read more about it <a href="https://zkproof.org/2021/06/30/setup-ceremonies/">in this article</a>.</p>
+<h3 id="cl-in-the-namada-context"><a class="header" href="#cl-in-the-namada-context">CL in the Namada context</a></h3>
+<p>Splitting the parameters into multiple chunks is useful, if it takes hours to contribute. In our case, the contribution time is about some seconds and in the worst case about some minutes. So, we don't need to split the parameters into chunks. Though, since we forked from the Aleo Trusted Setup, we still have some references to &quot;chunked&quot; things like folder, variable or function names. In our implementation, this means that we have one contributor and one chunk per round. For example, the contribution file of a round <code>i</code> from a participant will always be located at <code>transcript/round_{i}/chunk_0/contribution_1.unverified</code>. 
+To be able to re-use the CL without heavy refactoring, we decided to keep most of the Aleo code as it is and only change the parts that needed to be changed, more precisely the crypto functions (<code>initialize</code>, <code>contribute</code> and <code>verify</code>) and the coordinator config <code>environment.rs</code>.</p>
+<h2 id="2-http-rest-api"><a class="header" href="#2-http-rest-api">2. HTTP REST API</a></h2>
+<h3 id="description-1"><a class="header" href="#description-1">Description</a></h3>
+<p>The HTTP REST API is a rocket web server that interfaces with the CL. All requests need to be signed to be accepted by the endpoints. It's the core of the ceremony where the Coordinator is started together with utility functions like <code>verify_contributions</code>  and <code>update_coordinator</code>.</p>
+<h3 id="endpoints"><a class="header" href="#endpoints">Endpoints</a></h3>
+<ul>
+<li><code>contributor/join_queue</code> </li>
+<li><code>contributor/lock_chunk</code></li>
+<li><code>download/chunk</code></li>
+<li><code>contributor/challenge</code></li>
+<li><code>upload/chunk</code></li>
+<li><code>contributor/contribute_chunk</code></li>
+<li><code>contributor/heartbeat</code> </li>
+<li><code>contributor/get_tasks_left</code></li>
+</ul>
+<h3 id="saved-files"><a class="header" href="#saved-files">Saved files</a></h3>
+<ul>
+<li><code>contributors/namada_contributor_info_round_{i}.json</code> contributor info received from the participant. Same file as described below. </li>
+<li><code>contributors.json</code> list of contributors that can be exposed to a public API to be displayed on the website</li>
+</ul>
+<pre><code class="language-json">[
+   {
+      &quot;public_key&quot;:&quot;very random public key&quot;,
+      &quot;is_another_machine&quot;:true,
+      &quot;is_own_seed_of_randomness&quot;:true,
+      &quot;ceremony_round&quot;:1,
+      &quot;contribution_hash&quot;:&quot;some hash&quot;,
+      &quot;contribution_hash_signature&quot;:&quot;some hash&quot;,
+	// (optional) some timestamps that can be used to calculate and display the contribution time
+      &quot;timestamp&quot;:{
+         &quot;start_contribution&quot;:1,
+         &quot;end_contribution&quot;:7
+      }
+   },
+   // ...
+   {
+      &quot;public_key&quot;:&quot;very random public key&quot;,
+      &quot;is_another_machine&quot;:true,
+      &quot;is_own_seed_of_randomness&quot;:true,
+      &quot;ceremony_round&quot;:42,
+      &quot;contribution_hash&quot;:&quot;some hash&quot;,
+      &quot;contribution_hash_signature&quot;:&quot;some hash&quot;,
+      &quot;timestamp&quot;:{
+         &quot;start_contribution&quot;:1,
+         &quot;end_contribution&quot;:7
+      }
+   }
+]
+</code></pre>
+<h2 id="3-cli-implementation"><a class="header" href="#3-cli-implementation">3. CLI Implementation</a></h2>
+<h3 id="description-2"><a class="header" href="#description-2">Description</a></h3>
+<p>The CLI communicates with the HTTP REST API accordingly to the <a href="architecture/ledger/shielded-execution/trusted-setup.html#overview-of-the-contribution-flow">overview of the contribution flow</a>.</p>
+<h3 id="saved-files-1"><a class="header" href="#saved-files-1">Saved files</a></h3>
+<ul>
+<li><code>namada_challenge_round_{round_number}.params</code> challenge file downloaded from the Coordinator.</li>
+<li><code>namada_contribution_round_{round_number}.params</code> contribution file that needs to be uploaded to the Coordinator</li>
+<li><code>namada_contributor_info_round_{round_number}.json</code> contributor info that serves to identify participants.</li>
+</ul>
+<pre><code class="language-json">{
+   &quot;full_name&quot;:&quot;John Cage&quot;,
+   &quot;email&quot;:&quot;john@cage.me&quot;,
+   // ed25519 public key
+   &quot;public_key&quot;:&quot;very random public key&quot;,
+   // User participates in incentivized program or not
+   &quot;is_incentivized&quot;:true,
+   // User expresses his intent to participate or not in the contest for creative contributions
+   &quot;is_contest_participant&quot;:true,
+   // User can choose to contribute on another machine
+   &quot;is_another_machine&quot;:true,
+   // User can choose the default method to generate randomness or his own.
+   &quot;is_own_seed_of_randomness&quot;:true,
+   &quot;ceremony_round&quot;:42,
+   // hash of the contribution run by masp-mpc, contained in the transcript
+   &quot;contribution_hash&quot;:&quot;some hash&quot;,
+   // FIXME: is this necessary? so other user can check the contribution hash against the public key?
+   &quot;contribution_hash_signature&quot;:&quot;signature of the contribution hash&quot;,
+   // hash of the file saved on disk and sent to the coordinator
+   &quot;contribution_file_hash&quot;:&quot;some hash&quot;,
+   &quot;contribution_file_signature&quot;:&quot;signature of the contribution file&quot;,
+   // Some timestamps to get performance metrics of the ceremony
+   &quot;timestamp&quot;:{
+		// User starts the CLI
+      &quot;start_contribution&quot;:1,
+      // User has joined the queue
+      &quot;joined_queue&quot;:2,
+      // User has locked the challenge on the coordinator
+      &quot;challenge_locked&quot;:3,
+      // User has completed the download of the challenge
+      &quot;challenge_downloaded&quot;:4,
+      // User starts computation locally or downloads the file to another machine
+      &quot;start_computation&quot;:5,
+      // User finishes computation locally or uploads the file from another machine
+      &quot;end_computation&quot;:6,
+      // User attests that the file was uploaded correctly
+      &quot;end_contribution&quot;:7
+   },
+   &quot;contributor_info_signature&quot;:&quot;signature of the above fields and data&quot;
+}
+</code></pre>
+<h2 id="4-integration-of-the-masp-mpc"><a class="header" href="#4-integration-of-the-masp-mpc">4. Integration of the <code>masp-mpc</code></a></h2>
+<h3 id="description-3"><a class="header" href="#description-3">Description</a></h3>
+<p>There are 4 crypto commands available in the CL under <code>phase1-coordinator/src/commands/</code>: </p>
+<ol>
+<li><code>aggregations.rs</code> this was originally used to aggregate the chunks of the parameters. Since we don't have chunks, we don't need to aggregate anything. However, this logic was required and kept to transition between rounds. It doesn't affect any contribution file.</li>
+<li><code>computation.rs</code>  is used by a participant to contribute. The function <code>contribute_masp()</code> contains the logic from <code>masp-mpc/src/bin/contribute.rs</code>.</li>
+<li><code>initialization.rs</code>  is used to bootstrap the parameters on round 0 by giving as input the <a href="https://download.z.cash/downloads/powersoftau/">Zcash's Powers of Tau</a>. The function <code>initialize_masp()</code> contains the logic from <code>masp-mpc/src/bin/new.rs</code>.</li>
+<li><code>verification.rs</code> is used to verify the correct transformation of the parameters between contributions. The function <code>verify_masp()</code> contains the logic from <code>masp-mpc/src/bin/verify_transform.rs</code>.</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
 <h1 id="masp-integration-spec"><a class="header" href="#masp-integration-spec">MASP integration spec</a></h1>
 <h2 id="overview-2"><a class="header" href="#overview-2">Overview</a></h2>

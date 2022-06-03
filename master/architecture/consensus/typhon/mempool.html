@@ -166,6 +166,69 @@ This should not be a problem, since in Heterogeneous Paxos, for any connected le
 <li>Whenever a validator's Narwhal primary produces a batch, it must link in that batch not only to a quorum of that learner's block headers from the prior round, but also to the most recent batch this validator has produced <em>for any learner</em>. 
 This ensures that, within a finite number of rounds (3, I think), any transaction batch referenced by a weak quorum of batches in its own Narwhal will be (transitively) referenced by all batches in all Narwhals for entangled learners. </li>
 </ul>
+<h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
+<p>Like <a href="https://arxiv.org/abs/2105.11827">Narwhal</a> Heterogeneous Narwhal Validators have multiple concurrent processes (which can even run on separate machines).
+Each validator has one <em>primary</em> process and many <em>worker</em> processes. 
+When a client submits a transaction, they first send it to a worker process.</p>
+<h4 id="workers"><a class="header" href="#workers">Workers</a></h4>
+<p>Worker processes ensure transactions are available. 
+Transactions are batched, and erasure-coded (possibly simply replicated) across a <em>weak quorum for every learner</em> of workers, and only signed hashes of those batches are sent to primaries. 
+This separates the high-bandwidth work of replicating transactions from the ordering work of the primaries. </p>
+<h4 id="primaries"><a class="header" href="#primaries">Primaries</a></h4>
+<p>Primary processes establish a partial order of transaction batches (and by extension transactions), in the form of a structured DAG.
+The DAG proceeds in <em>rounds</em> for each learner: each primary produces at most one block for each (correct) learner in each round. 
+That block references blocks from prior rounds. </p>
+<p>Primaries assemble headers (both their own and for other primaries) from collections of worker hashes, and references to prior blocks. 
+They then sign votes, stating that they will not vote for conflicting headers, and (optionally) that their workers have indeed stored the referenced transactions. 
+Primaries collect votes concerning their own headers, producing blocks: aggregated signatures showing a header is unique. </p>
+<p>More formally, we present the Heterogeneous Narwhal protocol as the composition of two crucial pieces: the Heterogeneous Narwhal Availability protocol, and the Heterogeneous Narwhal Integrity protocol. </p>
+<h3 id="vocabulary"><a class="header" href="#vocabulary">Vocabulary</a></h3>
+<ul>
+<li><em>Learner</em>s dictate trust decisions: just like in Heterogeneous Paxos, we use a Learner Graph. In diagrams, we usually represent learners with colors (red and blue).</li>
+<li><img src="quorum.svg" alt="quorum" height="12pt"/> <em>Quorum</em>: a set of validators sufficient for a Learner to make blocks. Each Learner has a set of quorums.</li>
+<li><em>Intact Learner</em>: any 2 quorums for an Intact Learner have a correct validator in their intersection. Most of our guarantees apply only to Intact Learners.</li>
+<li><em>Entangled Learners</em>: a pair of learners <em>A</em> and <em>B</em> are entangled if, for any quorum <em>Qa</em> of <em>A</em>, and any quorum <em>Qb</em> of <em>B</em>, the intersection of <em>Qa</em> and <em>Qb</em> contains a correct validator. 
+Some guarantees apply pairwise to Entangled Learners: they are, in a sense, guaranteed to agree on stuff. </li>
+<li><img src="weak_quorum.svg" alt="weak quorum" height="12pt"/> <em>Weak Quorum</em>: a set of validators that intersects every quorum. Weak Quorums are Learner-specific, so when we say <em>weak quorum for every learner</em> we mean a set of validators that intersects every quorum of every Learner. </li>
+<li><img src="transaction.svg" alt="transaction" height="12pt"/> <em>Transaction</em>: data from clients to be ordered. We do not specify how it's formatted. </li>
+<li><em>Batch</em> a set of transactions collected by a Worker.</li>
+<li><img src="erasure_share.svg" alt="erasure share" height="12pt"/> <em>Erasure Share</em>: data transmitted to a weak quorum of listening workers, such that any Quorum of validators can re-construct the original data (Transaction or Batch of Transactions).</li>
+<li><img src="worker_hash.svg" alt="worker hash" height="12pt"/> <em>Worker Hash</em>: a signed digest of a batch of transactions collected by (and signed) by a worker.</li>
+<li><img src="header.svg" alt="header" height="12pt"/> <em>Header</em>s have:
+<ul>
+<li>an associated Primary (who &quot;created&quot; this header)</li>
+<li>a set of Worker Hashes (from workers on the same validator as this primary)</li>
+<li>an Availability Certificate for the previous Header issued by this primary</li>
+<li>at most one Signed Quorum for each Learner</li>
+</ul>
+</li>
+<li><img src="availability_certificate.svg" alt="availability certificate" height="12pt"/> <em>Availability Certificate</em>: an aggregation of signatures from a Weak Quorum attesting that everything referenced by a particular Header is available. Must include a signature from the Header's primary. </li>
+<li><img src="block.svg" alt="block" height="12pt"/> <em>Block</em>: an aggregation of Header signatures from a quorum of a specific learner attesting that they will not attest to any conflicting header. Also includes an Availability Certificate. Should include all signatures a primary has gathered for that header at the time (signatures in the Availability Certificate count).</li>
+<li><img src="signed_quorum.svg" alt="signed quorum" height="12pt"/> <em>Signed Quorum</em>: a quorum of blocks with the same learner and round, signed by a primary. These are referenced in headers. </li>
+</ul>
+<p><img src="data_structure.svg" alt="Data Structure" /></p>
+<h2 id="heterogeneous-narwhal-availability-protocol"><a class="header" href="#heterogeneous-narwhal-availability-protocol">Heterogeneous Narwhal Availability Protocol</a></h2>
+<p><img src="workers.svg" alt="Availability Protocol Time-Space Diagram" />
+(note the giant curly-brace represents a Weak Quorum of validators)</p>
+<h3 id="batches-and-worker-hashes"><a class="header" href="#batches-and-worker-hashes">Batches and Worker Hashes</a></h3>
+<p>When a worker has collected a batch of transactions, it transmits erasure shares (possibly full copies) of those transactions to other workers on a <em>weak quorum for every learner</em> of validators. 
+What's important about this erasure coding is that any Quorum of any Learner can reconstruct every transaction. 
+One way to accomplish this is to transmit a complete copy of all the data to an entire weak quorum for every learner. </p>
+<p>In fact, rather than wait until a batch is complete to start transmitting, workers can stream erasure shares as they receive transactions. 
+When it has completed a batch, a worker also transmits a signed <em>worker hash</em> to those other workers, and its own primary.
+We do not specify when workers should complete batches, but perhaps it should be after some timeout. Batches should not be empty. </p>
+<h3 id="signed-quorums-and-headers"><a class="header" href="#signed-quorums-and-headers">Signed Quorums and Headers</a></h3>
+<p>TODO</p>
+<h2 id="heterogeneous-narwhal-integrity-protocol"><a class="header" href="#heterogeneous-narwhal-integrity-protocol">Heterogeneous Narwhal Integrity Protocol</a></h2>
+<p>TODO
+<img src="primaries.svg" alt="Integrity Protocol Time-Space Diagram" />
+<img src="primary_timeline.svg" alt="Single Primary Timeline" /></p>
+<h2 id="dag-properties"><a class="header" href="#dag-properties">DAG Properties</a></h2>
+<p>TODO
+<img src="quorums_blue_5_red_3.svg" alt="Blue and Red DAG" /></p>
+<h2 id="consensus"><a class="header" href="#consensus">Consensus</a></h2>
+<p>TODO
+<img src="leader_path_3.svg" alt="Leader Path" /></p>
 
                     </main>
 

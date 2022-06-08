@@ -214,19 +214,84 @@ Some guarantees apply pairwise to Entangled Learners: they are, in a sense, guar
 <p>When a worker has collected a batch of transactions, it transmits erasure shares (possibly full copies) of those transactions to other workers on a <em>weak quorum for every learner</em> of validators. 
 What's important about this erasure coding is that any Quorum of any Learner can reconstruct every transaction. 
 Furthermore, workers must be able to verify that they are in fact storing the correct Erasure Share of the data referenced in the Worker Hash.
-One way to accomplish this is to transmit a complete copy of all the data to an entire weak quorum for every learner. </p>
+One way to accomplish this is to transmit a complete copy of all the data to an entire Weak Quorum for every Learner. </p>
 <p>In fact, rather than wait until a batch is complete to start transmitting, workers can stream erasure shares as they receive transactions. 
 When it has completed a batch, a worker also transmits a signed <em>Worker Hash</em> to those other workers, and its own primary.
-We do not specify when workers should complete batches, but perhaps it should be after some timeout. Batches should not be empty. </p>
+We do not specify when workers should complete batches, but perhaps it should be after some timeout, or perhaps primaries should signal workers to complete batches. Batches should not be empty. </p>
 <h3 id="signed-quorums-and-headers"><a class="header" href="#signed-quorums-and-headers">Signed Quorums and Headers</a></h3>
-<p>TODO</p>
+<p>Primaries ultimately produce blocks for each round, for each Learner, and send those blocks to other Primaries. 
+When a primary for validator <code>V</code> has received blocks for learner <code>L</code> and round <code>R</code> from an entire quorum of validators for learner <code>L</code>, it signs that collection, producing a <em>Signed Quorum</em> object, which identifies the validator <code>V</code>, the learner <code>L</code>, and the round <code>R</code>. 
+The Signed Quorum is then broadcast (or erasure coded) to primaries on a <em>weak quorum for every learner</em> of validators. 
+Much like batches, it is important that any Quorum for any Learner can re-construct the entire Signed Quorum. </p>
+<p>Periodically, each primary <code>P</code> produces <em>Headers</em>.
+Each Header contains:</p>
+<ul>
+<li>a set of signed Worker Hashes, all signed by <code>P</code>'s validator</li>
+<li>a hash referencing at most one Signed Quorum per Learner, all signed  by <code>P</code></li>
+<li>an <em>Availability Certificate</em> (we'll get to how those are made shortly) for the previous Header <code>P</code> issued
+Headers should be relatively small.
+Each primary then sends the header to all the other primaries. </li>
+</ul>
+<p>When a Primary receives a Header, it can produce an <em>Availability Vote</em> (which is a digital signature) iff</p>
+<ul>
+<li>the primary has stored its share of all Signed Quorums referenced,</li>
+<li>the primary has received messages from its workers indicating that they have stored their shares of all the Batches referenced
+The Availability Votes are then transmitted to the Header's Primary. </li>
+</ul>
+<p>When a primary receives Availability Votes for a Header from a weak quorum for every learner, it can aggregate those signatures to produce an <em>Availability Certificate</em>, which proves that the Header (and its contents) are available to any Quorum. 
+Availability Certificates should be small.
+Note that, if primaries broadcast Availability Certificates as soon as they produce them, other primaries may have all the components necessary to &quot;receive&quot; a Header even before the Header's Primary actually sends it.
+Specifically, they may have:</p>
+<ul>
+<li>Signed Batch Headers from their listening Workers</li>
+<li>Signed Quorum shares received earlier from the Primary</li>
+<li>Availability Certificate received earlier from the Primary</li>
+</ul>
 <h2 id="heterogeneous-narwhal-integrity-protocol"><a class="header" href="#heterogeneous-narwhal-integrity-protocol">Heterogeneous Narwhal Integrity Protocol</a></h2>
-<p>TODO
+<p>So far, only Signed Quorums have been Learner-specific: everything else requires a weak quorum for every learner.
+However, in the Integrity Protocol, almost everything is Learner-specific. 
+Furthermore, Workers are not involved in the Integrity Protocol: only Primaries. 
 <img src="primaries.svg" alt="Integrity Protocol Time-Space Diagram" />
+Each Header <code>H</code> features a predecessor <code>H'</code>: the availability certificate in <code>H</code> references the header <code>H'</code>. 
+When a Primary receives a Header <code>H</code>, it can produce an <em>Integrity Vote</em> iff it has not produced an Integrity vote for any other Header with the same predecessor as <code>H</code>
+In essence, this means that each correct Primary signs, for each other (even incorrect) Primary, a unique chain of Headers.
+This will ensure that no primary can produce conflicting blocks for entangled Learners. 
+Integrity Votes are transmitted back to the Primary associated with the Header. 
+In practice, a Integrity and Availability votes may be combined for Primaries who can cast both.</p>
+<p>For each Header it produces, a Primary can calculate its <em>Learner Vector</em>: this represents, for each Learner, the highest round number of any quorum referenced in this Header or its ancestors (its predecessor, of its predecessor's predecessor, etc.).
+If, for some Learner <code>L</code>, a header <code>H</code> has a greater round number <code>R</code> in its <em>Learner Vector</em> for <code>L</code> than did <code>H</code>'s predecessor, then the Primary can produce a <em>Block</em> for learner <code>R</code> and round <code>L</code>. 
+Intuitively, a Primary produces a block whenever it gets a quorum for a Learner in a latest round. </p>
+<p>A block for learner <code>L</code> includes an Availability Certificate, as well as an aggregated signature formed from the Integrity Votes of (at least) a quorum (for learner <code>L</code>) for the same Header. 
+Blocks are transmitted to all other Primaries, who use them to form Signed Quorums. </p>
+<p>If a Primary uses the same Header to make blocks for multiple Learners, each block it produces must use a superset of signatures as the previous. This ensures that if the Primary produces a block for Learner A and then a block for learner B, the Block for learner B effectively includes the block for learner A. 
+We can use this when we later establish a total ordering: any reference to the learner B block also effectively references the learner A block. </p>
+<p>Here is an example timeline of a Primary producing headers, availability certificates, and blocks. 
+Blocks are color coded by learner and include a round number. 
+Headers display <em>Learner Vectors</em>.
 <img src="primary_timeline.svg" alt="Single Primary Timeline" /></p>
 <h2 id="dag-properties"><a class="header" href="#dag-properties">DAG Properties</a></h2>
-<p>TODO
-<img src="quorums_blue_5_red_3.svg" alt="Blue and Red DAG" /></p>
+<p>Independently, the blocks for each Learner form a DAG with the same properties as in the original Narwhal:
+<img src="quorums_blue_5_red_0.svg" alt="Blue DAG" />
+(In these diagrams, blocks reference prior blocks from the same Primary; I just didn't draw those arrows)</p>
+<p>Note that blocks reference a quorum of blocks from the previous round.
+This does not require that the same primary produced a block for the previous round.<br />
+In round 5, Primary 3 can produce a block if it has received a quorum of round 4 blocks from other Primaries. </p>
+<p>Of course, primaries do not necessarily produce blocks for the same round at the same literal time.
+Here we see primaries producing blocks for round 3 for red learner at different times, depending on when they finish batches, or receive a round 2 quorum, or enough votes:
+<img src="quorums_blue_0_red_3.svg" alt="Blue DAG" />
+In Heterogeneous Narwhal, these two DAGs are being created simultaneously (using the same sequence of Headers from each Primary, and many of the same Votes):
+<img src="quorums_blue_5_red_3.svg" alt="Blue and Red DAG" />
+Note that round numbers for different learners do not have to be close to each other. 
+Red round 3 blocks are produced after blue round 5 blocks, and that's ok.</p>
+<p>Furthermore, rounds of different learners are not totally ordered.
+Red round 3 cannot really be said to happen before, or after, blue round 4. </p>
+<h3 id="fair-broadcast"><a class="header" href="#fair-broadcast">Fair Broadcast</a></h3>
+<p>In Homogeneous Narwhal, any block which is referenced by a weak quorum in the following round will be (transitively) referenced by all blocks thereafter. Heterogeneous Narwhal has analogous guarantees:</p>
+<h4 id="any-block-for-learner-a--referenced-by-a-weak-quorum-for-learner-a-will-after-3-rounds-be-transitively-referenced-by-all-future-blocks-of-learners-entangled-with-a"><a class="header" href="#any-block-for-learner-a--referenced-by-a-weak-quorum-for-learner-a-will-after-3-rounds-be-transitively-referenced-by-all-future-blocks-of-learners-entangled-with-a">Any block for learner <code>A</code>  referenced by a weak quorum for learner <code>A</code> will, after 3 rounds, be (transitively) referenced by all future blocks of learners entangled with <code>A</code>.</a></h4>
+<p>Specifically, such a block in round <code>R</code>, will be (transitively) referenced by all <code>A</code>-blocks in round <code>R+2</code>.</p>
+<p>TODO: finish this proof</p>
+<p>Consider the first round for learner <code>B</code> using at least a quorum of headers either used in <code>A</code> round <code>R+2</code> or after their primaries headers for <code>A</code> round <code>R+2</code>.</p>
+<p>Given that Learner <code>B</code> is entangled with <code>A</code>, any quorum </p>
 <h2 id="consensus"><a class="header" href="#consensus">Consensus</a></h2>
 <p>TODO
 <img src="leader_path_3.svg" alt="Leader Path" /></p>

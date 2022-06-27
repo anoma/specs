@@ -15,6 +15,7 @@
       - [Persistence](./architecture/clients/web-wallet/persistence.md) 
       - [RPC](./architecture/clients/web-wallet/rpc.md) 
       - [Transparent Transactions](./architecture/clients/web-wallet/transparent-transactions.md)
+      - [Shielded Transfers](./architecture/clients/web-wallet/shielded-transfers.md)
     - [Explorer](./architecture/clients/explorer.md)
   - [Consensus](./architecture/consensus.md)
     - [Ferveo](./architecture/consensus/ferveo.md)

@@ -1,22 +1,23 @@
-<h1> Shielded Transfers In Web Client</h1>
+# Shielded Transfers In Web Client
 
-Shielded transfers are based on [MASP](https://github.com/anoma/masp) and allows users of Anoma to performs transactions where only the recipient sender and a holder of a viewing key can see the transactions details. It is based on the specifications defined at [Shielded execution](../../ledger/shielded-execution/masp.md).
+Shielded transfers are based on [MASP](https://github.com/anoma/masp) and allows users of Anoma to performs transactions where only the recipient, sender and a holder of a viewing key can see the transactions details. It is based on the specifications defined at [Shielded execution](../../ledger/shielded-execution/masp.md).
 
-- [The API](#the-api)
-  - [`getMaspWeb`](#getmaspweb)
-  - [`MaspWeb`](#maspweb)
-    - [`generateShieldedTransaction`](#generateshieldedtransaction)
-    - [`getShieldedBalance`](#getshieldedbalance)
-    - [`createShieldedMasterAccount`](#createshieldedmasteraccount)
-    - [`decodeTransactionWithNextTxId`](#decodetransactionwithnexttxid)
-  - [Underlying Rust code](#underlying-rust-code)
-    - [`create_master_shielded_account`](#create_master_shielded_account)
-    - [`get_shielded_balance`](#get_shielded_balance)
-    - [`create_shielded_transfer`](#create_shielded_transfer)
-    - [`NodeWithNextId`](#nodewithnextid)
-    - [`NodeWithNextId::decode_transaction_with_next_tx_id`](#nodewithnextiddecode_transaction_with_next_tx_id)
-- [Codebase](#codebase)
-- [Relation to MASP/Anoma CLI](#relation-to-maspanoma-cli)
+- [Shielded Transfers In Web Client](#shielded-transfers-in-web-client)
+  - [The API](#the-api)
+    - [`getMaspWeb`](#getmaspweb)
+    - [`MaspWeb`](#maspweb)
+      - [`generateShieldedTransaction`](#generateshieldedtransaction)
+      - [`getShieldedBalance`](#getshieldedbalance)
+      - [`createShieldedMasterAccount`](#createshieldedmasteraccount)
+      - [`decodeTransactionWithNextTxId`](#decodetransactionwithnexttxid)
+    - [Underlying Rust code](#underlying-rust-code)
+      - [`create_master_shielded_account`](#create_master_shielded_account)
+      - [`get_shielded_balance`](#get_shielded_balance)
+      - [`create_shielded_transfer`](#create_shielded_transfer)
+      - [`NodeWithNextId`](#nodewithnextid)
+      - [`NodeWithNextId::decode_transaction_with_next_tx_id`](#nodewithnextiddecode_transaction_with_next_tx_id)
+  - [Codebase](#codebase)
+  - [Relation to MASP/Anoma CLI](#relation-to-maspanoma-cli)
 
 
 ## The API
@@ -32,7 +33,7 @@ async (): Promise<MaspWeb>
 
 ### `MaspWeb`
 * this contains the methods to perform the shielded transaction related activities.
-* the consumer should always call `init()`, to ensure it is initiated. There is a utility method called `getInitialised` that returns an instantiated instance of `MaspWeb`.
+* the is a utility method `getMaspWeb()` exported that returns an instance of `MaspWeb` and ensures it is instantiated.
 
 The class exposes the following methods:
 #### `generateShieldedTransaction`
@@ -75,7 +76,7 @@ createShieldedMasterAccount = (
 ```
 
 #### `decodeTransactionWithNextTxId`
-* Utility that decodes the fetched shielded transactiosn from the ledger and returns in format that contains the shielded transaction and the id for fetching the next one.
+* Utility that decodes the fetched shielded transactions from the ledger and returns in format that contains the shielded transaction and the id for fetching the next one.
 ```ts
 decodeTransactionWithNextTxId = (byteArray: Uint8Array): NodeWithNextId
 
@@ -128,7 +129,7 @@ pub fn create_shielded_transfer(
 ```
 
 #### `NodeWithNextId`
-* This is a utility type that is used when the TypeScript code is fetching the existing shielded transfers and extracting the id if the next shielded transfer to be fetched. The returned data from ledfer is turned to this type, so that the TypeScript can read the id of the next transfer and fetch it.
+* This is a utility type that is used when the TypeScript code is fetching the existing shielded transfers and extracting the id of the next shielded transfer to be fetched. The returned data from ledger is turned to this type, so that the TypeScript can read the id of the next transfer and fetch it.
 ```rust
 pub struct NodeWithNextId {
     pub(crate) node: Option<Vec<u8>>,

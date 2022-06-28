@@ -2,19 +2,147 @@
 
 Shielded transfers are based on [MASP](https://github.com/anoma/masp) and allows users of Anoma to performs transactions where only the recipient sender and a holder of a viewing key can see the transactions details. It is based on the specifications defined at [Shielded execution](../../ledger/shielded-execution/masp.md).
 
-- [Code](#code)
+- [The API](#the-api)
+  - [`getMaspWeb`](#getmaspweb)
+  - [`MaspWeb`](#maspweb)
+    - [`generateShieldedTransaction`](#generateshieldedtransaction)
+    - [`getShieldedBalance`](#getshieldedbalance)
+    - [`createShieldedMasterAccount`](#createshieldedmasteraccount)
+    - [`decodeTransactionWithNextTxId`](#decodetransactionwithnexttxid)
+  - [Underlying Rust code](#underlying-rust-code)
+    - [`create_master_shielded_account`](#create_master_shielded_account)
+    - [`get_shielded_balance`](#get_shielded_balance)
+    - [`create_shielded_transfer`](#create_shielded_transfer)
+    - [`NodeWithNextId`](#nodewithnextid)
+    - [`NodeWithNextId::decode_transaction_with_next_tx_id`](#nodewithnextiddecode_transaction_with_next_tx_id)
+- [Codebase](#codebase)
 - [Relation to MASP/Anoma CLI](#relation-to-maspanoma-cli)
-- [The interface](#the-interface)
-  - [create_master_shielded_account](#create_master_shielded_account)
-  - [*create_master_shielded_account (WIP)*](#create_master_shielded_account-wip)
-  - [get_shielded_balance](#get_shielded_balance)
-  - [create_shielded_transfer](#create_shielded_transfer)
-  - [NodeWithNextId](#nodewithnextid)
-  - [NodeWithNextId::decode_transaction_with_next_tx_id](#nodewithnextiddecode_transaction_with_next_tx_id)
 
 
+## The API
 
-## Code
+The consumer should use the npm package `@anoma/masp-web` that lives next to the other packages in the `anoma-apps` monorepo. It exposes the following:
+
+### `getMaspWeb`
+* A util to return an instance of `MaspWeb` and ensure it is initiated. It it was retrieved and initiated earlier the existing instance is returned.
+```ts
+async (): Promise<MaspWeb>
+```
+
+
+### `MaspWeb`
+* this contains the methods to perform the shielded transaction related activities.
+* the consumer should always call `init()`, to ensure it is initiated. There is a utility method called `getInitialised` that returns an instantiated instance of `MaspWeb`.
+
+The class exposes the following methods:
+#### `generateShieldedTransaction`
+```ts
+generateShieldedTransaction = async (
+    nodesWithNextId: NodeWithNextId[],
+    amount: bigint,
+    inputAddress: string | undefined,
+    outputAddress: string,
+    transactionConfiguration: TransactionConfiguration
+  ): Promise<Uint8Array>
+```
+
+#### `getShieldedBalance`
+```ts
+getShieldedBalance = async (
+    nodesWithNextId: NodeWithNextId[],
+    inputAddress: string,
+    transactionConfiguration: TransactionConfiguration
+  ): Promise<string>
+```
+
+#### `createShieldedMasterAccount`
+* needs to add the return type to reflect derived from Rust `packages/masp-web/lib/src/shielded_account/mod.rs:ShieldedAccount`
+```ts
+createShieldedMasterAccount = (
+    alias: string,
+    seedPhrase: string,
+    password?: string
+): any
+
+// the return type if from Rust code
+// packages/masp-web/lib/src/shielded_account/mod.rs:ShieldedAccount
+//
+// pub struct ShieldedAccount {
+//     viewing_key: String,
+//     spending_key: String,
+//     payment_address: String,
+// }
+```
+
+#### `decodeTransactionWithNextTxId`
+* Utility that decodes the fetched shielded transactiosn from the ledger and returns in format that contains the shielded transaction and the id for fetching the next one.
+```ts
+decodeTransactionWithNextTxId = (byteArray: Uint8Array): NodeWithNextId
+
+type NodeWithNextId = {
+  node: Uint8Array;
+  nextTransactionId: string;
+};
+```
+
+The above is wrapping the below described Rust API, which is not intended to be used independently at the moment.
+
+### Underlying Rust code
+currently the `masp-web` exposes the following API
+
+#### `create_master_shielded_account`
+```rust
+* creates a shielded master account
+* takes an optional password
+pub fn create_master_shielded_account(
+    alias: String,
+    seed_phrase: String,
+    password: Option<String>,
+) -> JsValue
+```
+
+#### `get_shielded_balance`
+* returns a shielded balance for a `spending_key_as_string` `token_address` pair
+* requires the past transfers as an input
+```rust
+pub fn get_shielded_balance(
+    shielded_transactions: JsValue,
+    spending_key_as_string: String,
+    token_address: String,
+) -> Option<u64>
+```
+
+#### `create_shielded_transfer`
+* returns a shielded transfer, based on the passed in data
+* requires the past transfers as an input
+```rust
+pub fn create_shielded_transfer(
+    shielded_transactions: JsValue,
+    spending_key_as_string: Option<String>,
+    payment_address_as_string: String,
+    token_address: String,
+    amount: u64,
+    spend_param_bytes: &[u8],
+    output_param_bytes: &[u8],
+) -> Option<Vec<u8>>
+```
+
+#### `NodeWithNextId`
+* This is a utility type that is used when the TypeScript code is fetching the existing shielded transfers and extracting the id if the next shielded transfer to be fetched. The returned data from ledfer is turned to this type, so that the TypeScript can read the id of the next transfer and fetch it.
+```rust
+pub struct NodeWithNextId {
+    pub(crate) node: Option<Vec<u8>>,
+    pub(crate) next_transaction_id: Option<String>,
+}
+```
+
+#### `NodeWithNextId::decode_transaction_with_next_tx_id`
+* accepts the raw byte array returned from the ledger when fetching for shielded transfers and returns `NodeWithNextId` as `JsValue`
+```rust
+pub fn decode_transaction_with_next_tx_id(transfer_as_byte_array: &[u8]) -> JsValue
+```
+
+## Codebase
 The code for interacting with the shielded transfers is split in 2 places:
 * `anoma-wallet` (TypeScript)
   * capturing the user interactions
@@ -36,70 +164,3 @@ The feature set and logic between the CLI and the web client should be the same.
 * When optimizing the shielded interaction. We need to fetch and persist the existing shielded transfers in the client. For this the CLI is using the file system of the operating system while the web client will either have to store that data directly to the persistance mechanism of the browser (localhost or indexedDB) or to those through a virtual filesystem that seems compliant to WASI interface.
 * In the current state the network calls will have to happen from the TypeScript code outside of the Rust and WASM. So any function calls to the shielded transfer related code in Rust must accept arrays of byte arrays that contains the newly fetched shielded transfers.
 * There are limitations to the system calls when querying the CPU core count in the web client, so the sub dependencies of MASP using Rayon will be limited.
-
-## The interface
-
-currently the `masp-web` exposes the following API
-
-### create_master_shielded_account
-```rust
-pub fn create_master_shielded_account(
-    alias: String,
-    seed_phrase: String,
-    password: Option<String>,
-) -> JsValue
-```
-* creates a shielded master account
-* takes an optional password
-
-### *create_master_shielded_account (WIP)* 
-```rust
-pub fn create_derived_shielded_account(
-    alias: String,
-    seed_phrase: String,
-    master_shielded_account: AccountToDeriveFrom,
-) -> JsValue
-```
-* creates a shielded master account
-* takes an optional password
-
-### get_shielded_balance
-```rust
-pub fn get_shielded_balance(
-    shielded_transactions: JsValue,
-    spending_key_as_string: String,
-    token_address: String,
-) -> Option<u64>
-```
-* returns a shielded balance for a `spending_key_as_string` `token_address` pair
-* requires the past transfers as an input
-
-### create_shielded_transfer
-```rust
-pub fn create_shielded_transfer(
-    shielded_transactions: JsValue,
-    spending_key_as_string: Option<String>,
-    payment_address_as_string: String,
-    token_address: String,
-    amount: u64,
-    spend_param_bytes: &[u8],
-    output_param_bytes: &[u8],
-) -> Option<Vec<u8>>
-```
-* returns a shielded transfer, based on the passed in data
-* requires the past transfers as an input
-
-### NodeWithNextId
-```rust
-pub struct NodeWithNextId {
-    pub(crate) node: Option<Vec<u8>>,
-    pub(crate) next_transaction_id: Option<String>,
-}
-```
-* This is a utility type that is used when the TypeScript code is fetching the existing shielded transfers and extracting the id if the next shielded transfer to be fetched. The returned data from ledfer is turned to this type, so that the TypeScript can read the id of the next transfer and fetch it.
-
-### NodeWithNextId::decode_transaction_with_next_tx_id
-```rust
-pub fn decode_transaction_with_next_tx_id(transfer_as_byte_array: &[u8]) -> JsValue
-```
-* accepts the raw byte array returned from the ledger when fetching for shielded transfers and returns `NodeWithNextId` as `JsValue`

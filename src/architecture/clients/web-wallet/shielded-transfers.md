@@ -4,8 +4,8 @@ Shielded transfers are based on [MASP](https://github.com/anoma/masp) and allows
 
 - [Shielded Transfers In Web Client](#shielded-transfers-in-web-client)
   - [Codebase](#codebase)
+  - [High level data flow in the client](#high-level-data-flow-in-the-client)
   - [Relation to MASP/Anoma CLI](#relation-to-maspanoma-cli)
-  - [Data Persistance in the client](#data-persistance-in-the-client)
   - [The API](#the-api)
     - [`getMaspWeb`](#getmaspweb)
     - [`MaspWeb`](#maspweb)
@@ -37,18 +37,18 @@ packages
 │   ├── anoma-wallet            # anoma web wallet
 ```
 
+## High level data flow in the client
+In the current implementation whenever a user start to perform a new action relating to shielded transfers, such as creating a new transfer or retrieving of the shielded balance, the client fetches all existing shielded transfers from the ledger. In the current form this is done in a non optimal way where the already fetched past shielded transactions are not persisted in the client. They are being fetched every time and only live shortly in the memory as raw byte arrays in the form they come in from the ledger. The life time in the client is: between the fetching in the TypeScript code and then being passed and being scanned/decrypted by MASP protocol in the Rust code.
+
+This process can be further optimized:
+* Anoma CLI already does caching of fetched transfers, so that logic can be ru-used by providing virtual filesystem (for example [memfs](https://github.com/streamich/memfs#readme)) implementation to Rust:
+* Likely the scanning can already start parallel while the fetching is running and if a sufficient amount of notes are found in scanning the fetching could be terminated.
+
 ## Relation to MASP/Anoma CLI
 The feature set and logic between the CLI and the web client should be the same. There are however a few differences in how they work, they are listed here:
 * When optimizing the shielded interaction. We need to fetch and persist the existing shielded transfers in the client. For this the CLI is using the file system of the operating system while the web client will either have to store that data directly to the persistance mechanism of the browser (localhost or indexedDB) or to those through a virtual filesystem that seems compliant to WASI interface.
 * In the current state the network calls will have to happen from the TypeScript code outside of the Rust and WASM. So any function calls to the shielded transfer related code in Rust must accept arrays of byte arrays that contains the newly fetched shielded transfers.
 * There are limitations to the system calls when querying the CPU core count in the web client, so the sub dependencies of MASP using Rayon will be limited.
-
-## Data Persistance in the client
-In the current way whenever a user start to perform a new action relating to shielded transfers, such as creating a new transfer or retrieving of the shielded balance, the client fetches all existing shielded transfers from the ledger. In the current form this is done in a non optimal way where the already fetched past shielded transactions are not persisted in the client. They are being fetched every time and only live shortly in the memory as raw byte arrays in the form they come in from the ledger. The life time in the client is: between the fetching in the TypeScript code and then being passed and being scanned/decrypted by MASP protocol in the Rust code.
-
-This process can be further optimized:
-* Anoma CLI already does caching of fetched transfers, so that logic can be ru-used by providing virtual filesystem (for example [memfs](https://github.com/streamich/memfs#readme)) implementation to Rust:
-* Maybe the scanning can start already parallel while the fetching is running and if a sufficient amount of notes are found in scanning the fetching could be terminated.
 
 
 ## The API

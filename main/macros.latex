@@ -1,0 +1,62 @@
+% \require{color}
+% \definecolor{DarkGreen}{rgb}{0,0.5,0}
+% \definecolor{LightBlue}{rgb}{0.9,0.9,1.0}
+\newcommand{\xspace}[0]{{\ }}
+\newcommand{\ensuremath}[1]{{#1}}
+\newcommand{\p}[1]{{\ensuremath{\left({{#1}}\right)}}}
+\newcommand{\cb}[1]{{\left\{{{#1}}\right\}}}
+\newcommand{\sqb}[1]{{\left[{{#1}}\right]}}
+\newcommand{\abs}[1]{{\left|{{#1}}\right|}}
+\newcommand{\an}[1]{{\left\langle{{#1}}\right\rangle}}
+\newcommand{\ceil}[1]{{\ensuremath{\left\lceil{{#1}}\right\rceil}}}
+\newcommand{\bb}[1]{{\left\llbracket{{#1}}\right\rrbracket}}
+\newcommand{\tb}[1]{{\textrm{\textbf{{#1}}}}}
+\newcommand{\ti}[1]{{\emph{{#1}}}}
+\newcommand{\tallpipe}[2]{{\ensuremath{\begin{array}{r|l}{{#1}}&{{#2}}\end{array}}}}
+\newcommand{\join}{{\ensuremath{\sqcup}}}
+\newcommand{\meet}{{\ensuremath{\sqcap}}}
+\newcommand{\addsunion}{\ensuremath{\uplus}}
+\newcommand{\addsintersection}{\ensuremath{%
+                \mathrel{\raisebox{.1em}{%
+                \reflectbox{\rotatebox[origin=c]{180}{\addsunion}}}}}}
+% used in hetcons formalisms
+\newcommand{\clg}[0]{{\textrm{CLG}}\xspace}
+\newcommand{\edge}[2]{{{{#1}}\!\!-\!\!{{#2}}}}
+\newcommand{\reality}[0]{{\textrm{REALITY}}\xspace}
+\newcommand{\reallysafe}[0]{\ensuremath{\mathcal{S}}\xspace}
+\newcommand{\reallylive}[0]{\ensuremath{\mathcal{L}}\xspace}
+\newcommand{\entangled}[2]{{\textrm{Entangled}\p{{{#1}}, {{#2}}}}}
+\newcommand{\live}[1]{{\textrm{Live}\p{{{#1}}}}}
+\newcommand{\correct}[1]{{\textrm{Correct}\p{{{#1}}}}}
+\newcommand{\accurate}[1]{{\textrm{Accurate}\p{{{#1}}}}}
+\newcommand{\terminating}[1]{{\textrm{Terminating}\p{{{#1}}}}}
+\newcommand{\sig}[1]{{\ensuremath{\textrm{Sig}\p{#1}}}}
+\newcommand{\tran}[1]{{\ensuremath{\textrm{Tran}\p{#1}}}}
+\newcommand{\geta}[1]{{\ensuremath{\textrm{Get1a}\p{#1}}}}
+\newcommand{\ba}[1]{{\ensuremath{\textrm{b}\p{#1}}}}
+\newcommand{\caught}[1]{{\ensuremath{\textrm{Caught}\p{#1}}}}
+\newcommand{\con}[2]{{\ensuremath{\textrm{Con}_{{#1}}\p{{#2}}}}}
+\newcommand{\qa}[1]{{\ensuremath{\textrm{q}\p{{#1}}}}}
+\newcommand{\fresh}[2]{{\ensuremath{\textrm{fresh}_{{#1}}\p{{#2}}}}}
+\newcommand{\buried}[2]{{\ensuremath{\textrm{Buried}\p{{{#1}}, {{#2}}}}}}
+\newcommand{\cona}[2]{{\ensuremath{\textrm{Con2as}_{{#1}}\p{{#2}}}}}
+\newcommand{\iffound}[2]{{\ensuremath{\textrm{IfFound}\p{{{#1}},{{#2}}}}}}
+\newcommand{\vbr}[3]{{\ensuremath{\textrm{R}_{{#1}}\p{{{#2}}, {{#3}}}}}}
+\newcommand{\va}[1]{{\ensuremath{\textrm{V}\p{{#1}}}}}
+\newcommand{\vb}[2]{{\ensuremath{\textrm{V}_{{#1}}\p{{#2}}}}}
+\newcommand{\decision}[2]{{\ensuremath{\textrm{Decision}_{{#1}}\p{{#2}}}}}
+% \DeclareMathOperator*{\argmax}{argmax}
+% convenient for expressing multi-line math
+\newcommand{\andlinesTwo}[2]{{  \ensuremath{\begin{array}{r l} & {{#1}} \\ \land & {{#2}} \end{array}}}}
+\newcommand{\andlinesThree}[3]{{\ensuremath{\begin{array}{r l} & {{#1}} \\ \land & {{#2}} \\ \land & {{#3}} \end{array}}}}
+\newcommand{\andlinesFour}[4]{{ \ensuremath{\begin{array}{r l} & {{#1}} \\ \land & {{#2}} \\ \land & {{#3}} \\ \land & {{#4}} \end{array}}}}
+\newcommand{\andlinesFive}[5]{{ \ensuremath{\begin{array}{r l} & {{#1}} \\ \land & {{#2}} \\ \land & {{#3}} \\ \land & {{#4}} \\ \land & {{#5}} \end{array}}}}
+\newcommand{\andlinesSix}[6]{{  \ensuremath{\begin{array}{r l} & {{#1}} \\ \land & {{#2}} \\ \land & {{#3}} \\ \land & {{#4}} \\ \land & {{#5}} \\ \land & {{#6}} \end{array}}}}
+\newcommand{\orlinesTwo}[2]{{  \ensuremath{\begin{array}{r l} & {{#1}} \\ \lor & {{#2}} \end{array}}}}
+\newcommand{\orlinesThree}[3]{{\ensuremath{\begin{array}{r l} & {{#1}} \\ \lor & {{#2}} \\ \lor & {{#3}} \end{array}}}}
+\newcommand{\orlinesFour}[4]{{ \ensuremath{\begin{array}{r l} & {{#1}} \\ \lor & {{#2}} \\ \lor & {{#3}} \\ \lor & {{#4}} \end{array}}}}
+\newcommand{\orlinesFive}[5]{{ \ensuremath{\begin{array}{r l} & {{#1}} \\ \lor & {{#2}} \\ \lor & {{#3}} \\ \lor & {{#4}} \\ \lor & {{#5}} \end{array}}}}
+\newcommand{\hetdifftext}[1]{
+  \colorbox{LightBlue}{#1}%
+}
+\newcommand{\hetdiff}[1]{\hetdifftext{$\displaystyle#1$}}

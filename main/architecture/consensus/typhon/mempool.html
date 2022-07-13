@@ -1,0 +1,350 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Mempool - Anoma Specifications</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/custom.css">
+
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../index.html"><strong aria-hidden="true">1.</strong> Index</a></li><li class="chapter-item expanded "><a href="../../../motivation.html"><strong aria-hidden="true">2.</strong> Motivation</a></li><li class="chapter-item expanded "><a href="../../../releases.html"><strong aria-hidden="true">3.</strong> Releases</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../releases/v1.html"><strong aria-hidden="true">3.1.</strong> V1</a></li><li class="chapter-item "><a href="../../../releases/v2.html"><strong aria-hidden="true">3.2.</strong> V2</a></li><li class="chapter-item "><a href="../../../releases/v3.html"><strong aria-hidden="true">3.3.</strong> V3</a></li></ol></li><li class="chapter-item expanded "><a href="../../../architecture.html"><strong aria-hidden="true">4.</strong> Architecture</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/clients.html"><strong aria-hidden="true">4.1.</strong> Clients</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/clients/web-wallet.html"><strong aria-hidden="true">4.1.1.</strong> Web Wallet</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/clients/web-wallet/ibc.html"><strong aria-hidden="true">4.1.1.1.</strong> IBC</a></li><li class="chapter-item "><a href="../../../architecture/clients/web-wallet/client-application.html"><strong aria-hidden="true">4.1.1.2.</strong> Client Application</a></li><li class="chapter-item "><a href="../../../architecture/clients/web-wallet/key-derivation.html"><strong aria-hidden="true">4.1.1.3.</strong> Key Derivation</a></li><li class="chapter-item "><a href="../../../architecture/clients/web-wallet/persistence.html"><strong aria-hidden="true">4.1.1.4.</strong> Persistence</a></li><li class="chapter-item "><a href="../../../architecture/clients/web-wallet/rpc.html"><strong aria-hidden="true">4.1.1.5.</strong> RPC</a></li><li class="chapter-item "><a href="../../../architecture/clients/web-wallet/transparent-transactions.html"><strong aria-hidden="true">4.1.1.6.</strong> Transparent Transactions</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/clients/explorer.html"><strong aria-hidden="true">4.1.2.</strong> Explorer</a></li></ol></li><li class="chapter-item expanded "><a href="../../../architecture/consensus.html"><strong aria-hidden="true">4.2.</strong> Consensus</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/consensus/ferveo.html"><strong aria-hidden="true">4.2.1.</strong> Ferveo</a></li><li class="chapter-item expanded "><a href="../../../architecture/consensus/typhon.html"><strong aria-hidden="true">4.2.2.</strong> Typhon</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../architecture/consensus/typhon/mempool.html" class="active"><strong aria-hidden="true">4.2.2.1.</strong> Mempool</a></li><li class="chapter-item "><a href="../../../architecture/consensus/typhon/heterogeneous_paxos.html"><strong aria-hidden="true">4.2.2.2.</strong> Heterogeneous Paxos</a></li><li class="chapter-item "><a href="../../../architecture/consensus/typhon/execution.html"><strong aria-hidden="true">4.2.2.3.</strong> Execution Engine</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/consensus/tendermint.html"><strong aria-hidden="true">4.2.3.</strong> Tendermint</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/economics.html"><strong aria-hidden="true">4.3.</strong> Economics</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/economics/proof-of-stake.html"><strong aria-hidden="true">4.3.1.</strong> Proof-of-stake</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/economics/proof-of-stake/bonding-mechanism.html"><strong aria-hidden="true">4.3.1.1.</strong> Bonding mechanism</a></li><li class="chapter-item "><a href="../../../architecture/economics/proof-of-stake/cubic-slashing.html"><strong aria-hidden="true">4.3.1.2.</strong> Cubic slashing</a></li><li class="chapter-item "><a href="../../../architecture/economics/proof-of-stake/reward-distribution.html"><strong aria-hidden="true">4.3.1.3.</strong> Reward distribution</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/economics/inflation-system.html"><strong aria-hidden="true">4.3.2.</strong> Inflation system</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/gossip.html"><strong aria-hidden="true">4.4.</strong> Gossip</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/gossip/intent-gossip-system.html"><strong aria-hidden="true">4.4.1.</strong> Intent gossip system</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/governance.html"><strong aria-hidden="true">4.5.</strong> Governance</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/governance/signaling.html"><strong aria-hidden="true">4.5.1.</strong> Signaling</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/identity.html"><strong aria-hidden="true">4.6.</strong> Identity</a></li><li class="chapter-item "><a href="../../../architecture/interoperability.html"><strong aria-hidden="true">4.7.</strong> Interoperability</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/interoperability/ibc.html"><strong aria-hidden="true">4.7.1.</strong> IBC</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/interoperability/ibc/message.html"><strong aria-hidden="true">4.7.1.1.</strong> Messages</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/interoperability/ethereum-bridge.html"><strong aria-hidden="true">4.7.2.</strong> Ethereum bridge</a></li><li class="chapter-item "><a href="../../../architecture/interoperability/external-integrations.html"><strong aria-hidden="true">4.7.3.</strong> External integrations</a></li><li class="chapter-item "><a href="../../../architecture/interoperability/private-bridges.html"><strong aria-hidden="true">4.7.4.</strong> Private bridges</a></li></ol></li><li class="chapter-item "><a href="../../../architecture/language.html"><strong aria-hidden="true">4.8.</strong> Language</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/language/j-group.html"><strong aria-hidden="true">4.8.1.</strong> J-group</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/language/j-group/vampir/vampir.html"><strong aria-hidden="true">4.8.1.1.</strong> Vampir</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/language/j-group/vampir/ir_design.html"><strong aria-hidden="true">4.8.1.1.1.</strong> Design Philosophy</a></li><li class="chapter-item "><a href="../../../architecture/language/j-group/vampir/ir_spec.html"><strong aria-hidden="true">4.8.1.1.2.</strong> Spec (Working Draft)</a></li><li class="chapter-item "><a href="../../../architecture/language/j-group/vampir/juvix-to-vampir.html"><strong aria-hidden="true">4.8.1.1.3.</strong> Juvix -&gt; Vampir Details</a></li><li class="chapter-item "><a href="../../../architecture/language/j-group/vampir/compilation_diagrams.html"><strong aria-hidden="true">4.8.1.1.4.</strong> Diagrams</a></li><li class="chapter-item "><a href="../../../architecture/language/j-group/vampir/examples.html"><strong aria-hidden="true">4.8.1.1.5.</strong> TestCircuit Example</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../architecture/ledger.html"><strong aria-hidden="true">4.9.</strong> Ledger</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/ledger/fee-system.html"><strong aria-hidden="true">4.9.1.</strong> Fee system</a></li><li class="chapter-item "><a href="../../../architecture/ledger/transparent-execution.html"><strong aria-hidden="true">4.9.2.</strong> Transparent execution</a></li><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution.html"><strong aria-hidden="true">4.9.3.</strong> Shielded execution</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution/masp.html"><strong aria-hidden="true">4.9.3.1.</strong> Multi-asset shielded pool</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution/trusted-setup.html"><strong aria-hidden="true">4.9.3.1.1.</strong> Trusted setup</a></li><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution/masp/ledger-integration.html"><strong aria-hidden="true">4.9.3.1.2.</strong> Ledger integration</a></li><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution/masp/shielded-pool-incentives.html"><strong aria-hidden="true">4.9.3.1.3.</strong> Shielded pool incentives</a></li><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution/masp/burn-and-mint.html"><strong aria-hidden="true">4.9.3.1.4.</strong> Burn and mint</a></li><li class="chapter-item "><a href="../../../architecture/ledger/shielded-execution/masp/convert-circuit.html"><strong aria-hidden="true">4.9.3.1.5.</strong> Convert circuit</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../architecture/matchmaking.html"><strong aria-hidden="true">4.10.</strong> Matchmaking</a></li><li class="chapter-item "><a href="../../../architecture/state.html"><strong aria-hidden="true">4.11.</strong> State</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Anoma Specifications</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/anoma/specs" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/anoma/specs/edit/master/src/architecture/consensus/typhon/mempool.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+<h1 id="mempool"><a class="header" href="#mempool">Mempool</a></h1>
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>Validators run the mempool protocol. 
+They receive transactions from clients, store them, and make them available for the <a href="execution.html">execution engine</a> to read. 
+The mempool protocol, which is based on <a href="https://arxiv.org/abs/2105.11827">Narwhal</a> also produces a <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a> of <em>headers</em>, which reference batches of transactions (via hash), and prove that those transactions are available for the <a href="execution.html">execution engine</a>. 
+These headers are ultimately what the <a href="heterogeneous_paxos.html">consensus</a> decides on, in order to establish a total order of transactions.</p>
+<h2 id="heterogeneous-narwhal"><a class="header" href="#heterogeneous-narwhal">Heterogeneous Narwhal</a></h2>
+<p>The core idea here is that we run an instance of Narwhal for each learner. 
+For chimera chains, an &quot;atomic batch&quot; of transactions can be stored in any involved learner's Narwhal. </p>
+<p>We also make 2 key changes:</p>
+<ul>
+<li>The availability proofs must show that any transaction is sufficiently available for all learners. 
+This should not be a problem, since in Heterogeneous Paxos, for any connected learner graph, any learner's quorum is a weak quorum for all learners. </li>
+<li>Whenever a validator's Narwhal primary produces a batch, it must link in that batch not only to a quorum of that learner's block headers from the prior round, but also to the most recent batch this validator has produced <em>for any learner</em>. 
+This ensures that, within a finite number of rounds (3, I think), any transaction batch referenced by a weak quorum of batches in its own Narwhal will be (transitively) referenced by all batches in all Narwhals for entangled learners. </li>
+</ul>
+<h3 id="overview"><a class="header" href="#overview">Overview</a></h3>
+<p>Like <a href="https://arxiv.org/abs/2105.11827">Narwhal</a> Heterogeneous Narwhal Validators have multiple concurrent processes (which can even run on separate machines).
+Each validator has one <em>primary</em> process and many <em>worker</em> processes. 
+When a client submits a transaction, they first send it to a worker process.</p>
+<h4 id="workers"><a class="header" href="#workers">Workers</a></h4>
+<p>Worker processes ensure transactions are available. 
+Transactions are batched, and erasure-coded (possibly simply replicated) across a <em>weak quorum for every learner</em> of workers, and only signed hashes of those batches are sent to primaries. 
+This separates the high-bandwidth work of replicating transactions from the ordering work of the primaries. </p>
+<h4 id="primaries"><a class="header" href="#primaries">Primaries</a></h4>
+<p>Primary processes establish a partial order of transaction batches (and by extension transactions), in the form of a structured DAG.
+The DAG proceeds in <em>rounds</em> for each learner: each primary produces at most one block for each (correct) learner in each round. 
+That block references blocks from prior rounds. </p>
+<p>Primaries assemble headers (both their own and for other primaries) from collections of worker hashes, and references to prior blocks. 
+They then sign votes, stating that they will not vote for conflicting headers, and (optionally) that their workers have indeed stored the referenced transactions. 
+Primaries collect votes concerning their own headers, producing blocks: aggregated signatures showing a header is unique. </p>
+<p>More formally, we present the Heterogeneous Narwhal protocol as the composition of two crucial pieces: the Heterogeneous Narwhal Availability protocol, and the Heterogeneous Narwhal Integrity protocol. </p>
+<h3 id="vocabulary"><a class="header" href="#vocabulary">Vocabulary</a></h3>
+<ul>
+<li><em>Learner</em>s dictate trust decisions: just like in Heterogeneous Paxos, we use a Learner Graph. In diagrams, we usually represent learners with colors (red and blue).</li>
+<li><img src="quorum.svg" alt="quorum" height="12pt"/> <em>Quorum</em>: a set of validators sufficient for a Learner to make blocks. Each Learner has a set of quorums.</li>
+<li><em>Intact Learner</em>: any 2 quorums for an Intact Learner have a correct validator in their intersection. Most of our guarantees apply only to Intact Learners.</li>
+<li><em>Entangled Learners</em>: a pair of learners <em>A</em> and <em>B</em> are entangled if, for any quorum <em>Qa</em> of <em>A</em>, and any quorum <em>Qb</em> of <em>B</em>, the intersection of <em>Qa</em> and <em>Qb</em> contains a correct validator. 
+Some guarantees apply pairwise to Entangled Learners: they are, in a sense, guaranteed to agree on stuff. </li>
+<li><img src="weak_quorum.svg" alt="weak quorum" height="12pt"/> <em>Weak Quorum</em>: a set of validators that intersects every quorum. Weak Quorums are Learner-specific, so when we say <em>weak quorum for every learner</em> we mean a set of validators that intersects every quorum of every Learner. </li>
+<li><img src="transaction.svg" alt="transaction" height="12pt"/> <em>Transaction</em>: data from clients to be ordered. We do not specify how it's formatted. </li>
+<li><em>Batch</em> a set of transactions collected by a Worker.</li>
+<li><img src="erasure_share.svg" alt="erasure share" height="12pt"/> <em>Erasure Share</em>: data transmitted to a weak quorum of listening workers, such that any Quorum of validators can re-construct the original data (Transaction or Batch of Transactions).</li>
+<li><img src="worker_hash.svg" alt="worker hash" height="12pt"/> <em>Worker Hash</em>: a signed digest of a batch of transactions collected by (and signed) by a worker.</li>
+<li><img src="header.svg" alt="header" height="12pt"/> <em>Header</em>s have:
+<ul>
+<li>an associated Primary (who &quot;created&quot; this header)</li>
+<li>a set of Worker Hashes (from workers on the same validator as this primary)</li>
+<li>an Availability Certificate for the previous Header issued by this primary</li>
+<li>at most one Signed Quorum for each Learner</li>
+</ul>
+</li>
+<li><img src="availability_certificate.svg" alt="availability certificate" height="12pt"/> <em>Availability Certificate</em>: an aggregation of signatures from a Weak Quorum attesting that everything referenced by a particular Header is available. Must include a signature from the Header's primary. </li>
+<li><img src="block.svg" alt="block" height="12pt"/> <em>Block</em>: an aggregation of Header signatures from a quorum of a specific learner attesting that they will not attest to any conflicting header. Also includes an Availability Certificate. Should include all signatures a primary has gathered for that header at the time (signatures in the Availability Certificate count).</li>
+<li><img src="signed_quorum.svg" alt="signed quorum" height="12pt"/> <em>Signed Quorum</em>: a quorum of blocks with the same learner and round, signed by a primary. These are referenced in headers. </li>
+</ul>
+<p><img src="data_structure.svg" alt="Data Structure" /></p>
+<h2 id="heterogeneous-narwhal-availability-protocol"><a class="header" href="#heterogeneous-narwhal-availability-protocol">Heterogeneous Narwhal Availability Protocol</a></h2>
+<p><img src="workers.svg" alt="Availability Protocol Time-Space Diagram" />
+(note the giant curly-brace represents a Weak Quorum of validators)</p>
+<h3 id="batches-and-worker-hashes"><a class="header" href="#batches-and-worker-hashes">Batches and Worker Hashes</a></h3>
+<p>When a worker has collected a batch of transactions, it transmits erasure shares (possibly full copies) of those transactions to other workers on a <em>weak quorum for every learner</em> of validators. 
+What's important about this erasure coding is that any Quorum of any Learner can reconstruct every transaction. 
+Furthermore, workers must be able to verify that they are in fact storing the correct Erasure Share of the data referenced in the Worker Hash.
+One way to accomplish this is to transmit a complete copy of all the data to an entire Weak Quorum for every Learner. </p>
+<p>In fact, rather than wait until a batch is complete to start transmitting, workers can stream erasure shares as they receive transactions. 
+When it has completed a batch, a worker also transmits a signed <em>Worker Hash</em> to those other workers, and its own primary.
+We do not specify when workers should complete batches, but perhaps it should be after some timeout, or perhaps primaries should signal workers to complete batches. Batches should not be empty. </p>
+<h3 id="signed-quorums-and-headers"><a class="header" href="#signed-quorums-and-headers">Signed Quorums and Headers</a></h3>
+<p>Primaries ultimately produce blocks for each round, for each Learner, and send those blocks to other Primaries. 
+When a primary for validator <code>V</code> has received blocks for learner <code>L</code> and round <code>R</code> from an entire quorum of validators for learner <code>L</code>, it signs that collection, producing a <em>Signed Quorum</em> object, which identifies the validator <code>V</code>, the learner <code>L</code>, and the round <code>R</code>. 
+The Signed Quorum is then broadcast (or erasure coded) to primaries on a <em>weak quorum for every learner</em> of validators. 
+Much like batches, it is important that any Quorum for any Learner can re-construct the entire Signed Quorum. </p>
+<p>Periodically, each primary <code>P</code> produces <em>Headers</em>.
+Each Header contains:</p>
+<ul>
+<li>a set of signed Worker Hashes, all signed by <code>P</code>'s validator</li>
+<li>a hash referencing at most one Signed Quorum per Learner, all signed  by <code>P</code></li>
+<li>an <em>Availability Certificate</em> (we'll get to how those are made shortly) for the previous Header <code>P</code> issued
+Headers should be relatively small.
+Each primary then sends the header to all the other primaries. </li>
+</ul>
+<p>When a Primary receives a Header, it can produce an <em>Availability Vote</em> (which is a digital signature) iff</p>
+<ul>
+<li>the primary has stored its share of all Signed Quorums referenced,</li>
+<li>the primary has received messages from its workers indicating that they have stored their shares of all the Batches referenced
+The Availability Votes are then transmitted to the Header's Primary. </li>
+</ul>
+<p>When a primary receives Availability Votes for a Header from a weak quorum for every learner, it can aggregate those signatures to produce an <em>Availability Certificate</em>, which proves that the Header (and its contents) are available to any Quorum. 
+Availability Certificates should be small.
+Note that, if primaries broadcast Availability Certificates as soon as they produce them, other primaries may have all the components necessary to &quot;receive&quot; a Header even before the Header's Primary actually sends it.
+Specifically, they may have:</p>
+<ul>
+<li>Signed Batch Headers from their listening Workers</li>
+<li>Signed Quorum shares received earlier from the Primary</li>
+<li>Availability Certificate received earlier from the Primary</li>
+</ul>
+<h2 id="heterogeneous-narwhal-integrity-protocol"><a class="header" href="#heterogeneous-narwhal-integrity-protocol">Heterogeneous Narwhal Integrity Protocol</a></h2>
+<p>So far, only Signed Quorums have been Learner-specific: everything else requires a weak quorum for every learner.
+However, in the Integrity Protocol, almost everything is Learner-specific. 
+Furthermore, Workers are not involved in the Integrity Protocol: only Primaries. 
+<img src="primaries.svg" alt="Integrity Protocol Time-Space Diagram" />
+Each Header <code>H</code> features a predecessor <code>H'</code>: the availability certificate in <code>H</code> references the header <code>H'</code>. 
+When a Primary receives a Header <code>H</code>, it can produce an <em>Integrity Vote</em> iff it has not produced an Integrity vote for any other Header with the same predecessor as <code>H</code>
+In essence, this means that each correct Primary signs, for each other (even incorrect) Primary, a unique chain of Headers.
+This will ensure that no primary can produce conflicting blocks for entangled Learners. 
+Integrity Votes are transmitted back to the Primary associated with the Header. 
+In practice, a Integrity and Availability votes may be combined for Primaries who can cast both.</p>
+<p>For each Header it produces, a Primary can calculate its <em>Learner Vector</em>: this represents, for each Learner, the highest round number of any quorum referenced in this Header or its ancestors (its predecessor, of its predecessor's predecessor, etc.).
+If, for some Learner <code>L</code>, a header <code>H</code> has a greater round number <code>R</code> in its <em>Learner Vector</em> for <code>L</code> than did <code>H</code>'s predecessor, then the Primary can produce a <em>Block</em> for learner <code>R</code> and round <code>L</code>. 
+Intuitively, a Primary produces a block whenever it gets a quorum for a Learner in a latest round. </p>
+<p>A block for learner <code>L</code> includes an Availability Certificate, as well as an aggregated signature formed from the Integrity Votes of (at least) a quorum (for learner <code>L</code>) for the same Header. 
+Blocks are transmitted to all other Primaries, who use them to form Signed Quorums. </p>
+<p>If a Primary uses the same Header to make blocks for multiple Learners, each block it produces must use a superset of signatures as the previous. This ensures that if the Primary produces a block for Learner A and then a block for learner B, the Block for learner B effectively includes the block for learner A. 
+We can use this when we later establish a total ordering: any reference to the learner B block also effectively references the learner A block. </p>
+<p>Here is an example timeline of a Primary producing headers, availability certificates, and blocks. 
+Blocks are color coded by learner and include a round number. 
+Headers display <em>Learner Vectors</em>.
+<img src="primary_timeline.svg" alt="Single Primary Timeline" /></p>
+<h2 id="dag-properties"><a class="header" href="#dag-properties">DAG Properties</a></h2>
+<p>Independently, the blocks for each Learner form a DAG with the same properties as in the original Narwhal:
+<img src="quorums_blue_5_red_0.svg" alt="Blue DAG" />
+(In these diagrams, blocks reference prior blocks from the same Primary; I just didn't draw those arrows)</p>
+<p>Note that blocks reference a quorum of blocks from the previous round.
+This does not require that the same primary produced a block for the previous round.<br />
+In round 5, Primary 3 can produce a block if it has received a quorum of round 4 blocks from other Primaries. </p>
+<p>Of course, primaries do not necessarily produce blocks for the same round at the same literal time.
+Here we see primaries producing blocks for round 3 for red learner at different times, depending on when they finish batches, or receive a round 2 quorum, or enough votes:
+<img src="quorums_blue_0_red_3.svg" alt="Blue DAG" />
+In Heterogeneous Narwhal, these two DAGs are being created simultaneously (using the same sequence of Headers from each Primary, and many of the same Votes):
+<img src="quorums_blue_5_red_3.svg" alt="Blue and Red DAG" />
+Note that round numbers for different learners do not have to be close to each other. 
+Red round 3 blocks are produced after blue round 5 blocks, and that's ok.</p>
+<p>Furthermore, rounds of different learners are not totally ordered.
+Red round 3 cannot really be said to happen before, or after, blue round 4. </p>
+<h3 id="fair-broadcast"><a class="header" href="#fair-broadcast">Fair Broadcast</a></h3>
+<p>In Homogeneous Narwhal, any block which is referenced by a weak quorum in the following round will be (transitively) referenced by all blocks thereafter. Heterogeneous Narwhal has analogous guarantees:</p>
+<h4 id="any-block-for-learner-a--referenced-by-a-weak-quorum-for-learner-a-will-after-3-rounds-be-transitively-referenced-by-all-future-blocks-of-learners-entangled-with-a"><a class="header" href="#any-block-for-learner-a--referenced-by-a-weak-quorum-for-learner-a-will-after-3-rounds-be-transitively-referenced-by-all-future-blocks-of-learners-entangled-with-a">Any block for learner <code>A</code>  referenced by a weak quorum for learner <code>A</code> will, after 3 rounds, be (transitively) referenced by all future blocks of learners entangled with <code>A</code>.</a></h4>
+<p>Specifically, such a block in round <code>R</code>, will be (transitively) referenced by all <code>A</code>-blocks in round <code>R+2</code>.</p>
+<p>TODO: finish this proof</p>
+<p>Consider the first round for learner <code>B</code> using at least a quorum of headers either used in <code>A</code> round <code>R+2</code> or after their primaries headers for <code>A</code> round <code>R+2</code>.</p>
+<p>Given that Learner <code>B</code> is entangled with <code>A</code>, any quorum </p>
+<h2 id="consensus"><a class="header" href="#consensus">Consensus</a></h2>
+<p>TODO
+<img src="leader_path_3.svg" alt="Leader Path" /></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../architecture/consensus/typhon.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next" href="../../../architecture/consensus/typhon/heterogeneous_paxos.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../architecture/consensus/typhon.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next" href="../../../architecture/consensus/typhon/heterogeneous_paxos.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../searcher.js" type="text/javascript" charset="utf-8"></script>
+
+        <script src="../../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        <script type="text/javascript" src="../../../assets/mermaid.min.js"></script>
+        <script type="text/javascript" src="../../../assets/mermaid-init.js"></script>
+
+
+    </body>
+</html>
